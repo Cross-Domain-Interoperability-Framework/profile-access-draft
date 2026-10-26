@@ -1,0 +1,2578 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "CDIF Access",
+  "description": "Profile module for machine-actionable access and usage conditions, expressed as ODRL Offer policies (odrlProperties/odrlOffer). Marks the catalog record as conformant to the CDIF access spec and requires at least one policy, attached in either of two places:\n- on a schema:distribution item, as odrl:hasPolicy: the preferred place,\n  because distributions of one dataset can carry different conditions\n  (cdifbook data_access, \"Connecting CDIF and ODRL\"). The Offer may be\n  inline or an {@id} reference.\n\n- on the Dataset, as an {@id} reference in schema:conditionsOfAccess to\n  a policy published elsewhere. Only a reference: cdifCore types the\n  items of that property as string, {@id} or a CreativeWork link, and an\n  inline Offer matches none of them, so it would fail any composite that\n  includes cdifCore.\n\nThis module adds constraints only; it does not change cdifCore's schema:distribution anyOf [DataDownload, WebAPI]. Draft; OPEN QUESTIONS are marked \"OPEN:\".",
+  "type": "object",
+  "properties": {
+    "@context": {
+      "type": "object",
+      "description": "Additional JSON-LD namespace prefixes for access properties.",
+      "properties": {
+        "odrl": {
+          "const": "http://www.w3.org/ns/odrl/2/"
+        },
+        "cdifa1": {
+          "const": "https://w3id.org/cdif/access/profile1/"
+        },
+        "rdf": {
+          "const": "http://www.w3.org/1999/02/22-rdf-syntax-ns#"
+        },
+        "xsd": {
+          "const": "http://www.w3.org/2001/XMLSchema#"
+        }
+      }
+    },
+    "schema:subjectOf": {
+      "properties": {
+        "dcterms:conformsTo": {
+          "description": "OPEN: https://w3id.org/cdif/access/1.1 is not minted. 1.1 follows the other CDIF modules; a new profile might start at 1.0 instead.",
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/ObjectReference"
+          },
+          "minItems": 1,
+          "contains": {
+            "type": "object",
+            "required": [
+              "@id"
+            ],
+            "additionalProperties": false,
+            "properties": {
+              "@id": {
+                "const": "https://w3id.org/cdif/access/1.1"
+              }
+            }
+          }
+        }
+      }
+    },
+    "schema:conditionsOfAccess": {
+      "description": "Item shape comes from cdifCore. In a CDIF Access record, an {@id} item here should be the uid of an ODRL Offer; JSON Schema cannot tell that reference from any other (a SHACL rule would have to)."
+    },
+    "schema:distribution": {
+      "type": "array",
+      "items": {
+        "properties": {
+          "odrl:hasPolicy": {
+            "description": "ODRL policies governing access to and use of this distribution. OPEN: the book argues against dataset-level policies, so odrl:hasPolicy is not declared on the Dataset; confirm.",
+            "type": "array",
+            "minItems": 1,
+            "items": {
+              "anyOf": [
+                {
+                  "$ref": "#/$defs/ObjectReference"
+                },
+                {
+                  "title": "ODRL Offer",
+                  "description": "CDIF Access profile of an ODRL 2.2 Offer (https://www.w3.org/TR/odrl-model/#policy-offer): the baseline access and usage conditions a data provider sets for a digital object, without naming who they apply to (that is an ODRL Agreement). Built on the generic odrlPolicy block, which carries the ODRL structure; this block adds only CDIF's own rules. Draft from the CDIF Access spreadsheet (CDIF_Access_Profile_ODRL_Classes_Properties_Description.xlsx) and the cdifbook data_access chapter.\nKeys carry the odrl: prefix and the document's @context declares the odrl, cdifa1 (https://w3id.org/cdif/access/profile1/), rdf and xsd prefixes. The ODRL JSON-LD context is not used, so nothing coerces a string to an IRI: every IRI value (target, action, parties, operands) is an {\"@id\": ...} object.\nAn access condition (something done BEFORE the digital object is retrieved) is a permission duty constrained by odrl:event odrl:lt odrl:policyUsage (https://www.w3.org/TR/odrl-model/#duty-perm). Everything else is a usage condition: a permission (may do), an obligation (must do) or a prohibition (must not do).\nOPEN QUESTIONS are marked \"OPEN:\" below.",
+                  "type": "object",
+                  "allOf": [
+                    {
+                      "title": "ODRL Policy",
+                      "description": "An ODRL 2.2 Policy (https://www.w3.org/TR/odrl-model/#policy): a group of permissions, prohibitions and obligations, typed by one of its subclasses: Set (the default), Offer, Agreement, Request, Ticket, Assertion or Privacy. A target or party given at policy level applies to every rule (https://www.w3.org/TR/odrl-model/#composition), so each subclass requirement below is met by the policy-level property or by that property on every rule concerned. The subclass requirements are those stated in the ODRL vocabulary (https://www.w3.org/ns/odrl/2/ODRL22.ttl); requirements on meaning (e.g. an Offer grants no privileges to an assignee) cannot be checked by a schema.",
+                      "type": "object",
+                      "properties": {
+                        "@context": {
+                          "type": "object",
+                          "description": "JSON-LD namespace prefixes for ODRL properties.",
+                          "properties": {
+                            "odrl": {
+                              "const": "http://www.w3.org/ns/odrl/2/"
+                            }
+                          }
+                        },
+                        "@id": {
+                          "description": "Globally unique IRI for the policy (ODRL uid).",
+                          "type": "string",
+                          "format": "iri"
+                        },
+                        "@type": {
+                          "type": "array",
+                          "items": {
+                            "type": "string"
+                          },
+                          "contains": {
+                            "enum": [
+                              "odrl:Policy",
+                              "odrl:Set",
+                              "odrl:Offer",
+                              "odrl:Agreement",
+                              "odrl:Request",
+                              "odrl:Ticket",
+                              "odrl:Assertion",
+                              "odrl:Privacy"
+                            ]
+                          }
+                        },
+                        "odrl:profile": {
+                          "description": "ODRL profiles the policy conforms to.",
+                          "anyOf": [
+                            {
+                              "$ref": "#/$defs/ObjectReference"
+                            },
+                            {
+                              "type": "array",
+                              "items": {
+                                "$ref": "#/$defs/ObjectReference"
+                              }
+                            }
+                          ]
+                        },
+                        "odrl:inheritFrom": {
+                          "description": "Parent policies whose rules this policy inherits.",
+                          "anyOf": [
+                            {
+                              "$ref": "#/$defs/ObjectReference"
+                            },
+                            {
+                              "type": "array",
+                              "items": {
+                                "$ref": "#/$defs/ObjectReference"
+                              }
+                            }
+                          ]
+                        },
+                        "odrl:conflict": {
+                          "description": "Strategy for resolving conflicts between permissions and prohibitions (odrl:conflict). Closed: ODRL defines exactly these three.",
+                          "type": "object",
+                          "properties": {
+                            "@id": {
+                              "enum": [
+                                "odrl:invalid",
+                                "http://www.w3.org/ns/odrl/2/invalid",
+                                "odrl:perm",
+                                "http://www.w3.org/ns/odrl/2/perm",
+                                "odrl:prohibit",
+                                "http://www.w3.org/ns/odrl/2/prohibit"
+                              ]
+                            }
+                          },
+                          "required": [
+                            "@id"
+                          ],
+                          "additionalProperties": false
+                        },
+                        "odrl:target": {
+                          "$ref": "#/$defs/Target"
+                        },
+                        "odrl:assigner": {
+                          "$ref": "#/$defs/PartyRef"
+                        },
+                        "odrl:assignee": {
+                          "$ref": "#/$defs/PartyRef"
+                        },
+                        "odrl:permission": {
+                          "type": "array",
+                          "items": {
+                            "allOf": [
+                              {
+                                "$ref": "#/$defs/Rule"
+                              },
+                              {
+                                "properties": {
+                                  "@type": {
+                                    "contains": {
+                                      "const": "odrl:Permission"
+                                    }
+                                  },
+                                  "odrl:duty": {
+                                    "description": "Duties that must be fulfilled before the permission can be exercised.",
+                                    "type": "array",
+                                    "items": {
+                                      "$ref": "#/$defs/Duty"
+                                    }
+                                  }
+                                }
+                              }
+                            ]
+                          }
+                        },
+                        "odrl:prohibition": {
+                          "type": "array",
+                          "items": {
+                            "allOf": [
+                              {
+                                "$ref": "#/$defs/Rule"
+                              },
+                              {
+                                "properties": {
+                                  "@type": {
+                                    "contains": {
+                                      "const": "odrl:Prohibition"
+                                    }
+                                  },
+                                  "odrl:remedy": {
+                                    "description": "Duties owed if the prohibition is infringed.",
+                                    "type": "array",
+                                    "items": {
+                                      "$ref": "#/$defs/Duty"
+                                    }
+                                  }
+                                }
+                              }
+                            ]
+                          }
+                        },
+                        "odrl:obligation": {
+                          "type": "array",
+                          "items": {
+                            "$ref": "#/$defs/Duty"
+                          }
+                        }
+                      },
+                      "required": [
+                        "@type",
+                        "@id"
+                      ],
+                      "anyOf": [
+                        {
+                          "required": [
+                            "odrl:permission"
+                          ]
+                        },
+                        {
+                          "required": [
+                            "odrl:prohibition"
+                          ]
+                        },
+                        {
+                          "required": [
+                            "odrl:obligation"
+                          ]
+                        }
+                      ],
+                      "allOf": [
+                        {
+                          "if": {
+                            "properties": {
+                              "@type": {
+                                "contains": {
+                                  "const": "odrl:Set"
+                                }
+                              }
+                            },
+                            "required": [
+                              "@type"
+                            ]
+                          },
+                          "then": {
+                            "allOf": [
+                              {
+                                "$ref": "#/$defs/hasTarget"
+                              }
+                            ]
+                          }
+                        },
+                        {
+                          "if": {
+                            "properties": {
+                              "@type": {
+                                "contains": {
+                                  "const": "odrl:Offer"
+                                }
+                              }
+                            },
+                            "required": [
+                              "@type"
+                            ]
+                          },
+                          "then": {
+                            "allOf": [
+                              {
+                                "$ref": "#/$defs/hasPermissionOrProhibition"
+                              },
+                              {
+                                "$ref": "#/$defs/hasAssigner"
+                              }
+                            ]
+                          }
+                        },
+                        {
+                          "if": {
+                            "properties": {
+                              "@type": {
+                                "contains": {
+                                  "const": "odrl:Agreement"
+                                }
+                              }
+                            },
+                            "required": [
+                              "@type"
+                            ]
+                          },
+                          "then": {
+                            "allOf": [
+                              {
+                                "$ref": "#/$defs/hasPermissionOrProhibition"
+                              },
+                              {
+                                "$ref": "#/$defs/hasAssigner"
+                              },
+                              {
+                                "$ref": "#/$defs/hasAssignee"
+                              }
+                            ]
+                          }
+                        },
+                        {
+                          "if": {
+                            "properties": {
+                              "@type": {
+                                "contains": {
+                                  "const": "odrl:Request"
+                                }
+                              }
+                            },
+                            "required": [
+                              "@type"
+                            ]
+                          },
+                          "then": {
+                            "allOf": [
+                              {
+                                "$ref": "#/$defs/hasPermissionOrProhibition"
+                              },
+                              {
+                                "$ref": "#/$defs/hasTarget"
+                              },
+                              {
+                                "$ref": "#/$defs/hasAssignee"
+                              }
+                            ]
+                          }
+                        },
+                        {
+                          "if": {
+                            "properties": {
+                              "@type": {
+                                "contains": {
+                                  "const": "odrl:Ticket"
+                                }
+                              }
+                            },
+                            "required": [
+                              "@type"
+                            ]
+                          },
+                          "then": {
+                            "allOf": [
+                              {
+                                "$ref": "#/$defs/hasPermissionOrProhibition"
+                              },
+                              {
+                                "$ref": "#/$defs/hasTarget"
+                              },
+                              {
+                                "description": "A Ticket names no assignee; it is granted to whoever holds it.",
+                                "not": {
+                                  "anyOf": [
+                                    {
+                                      "required": [
+                                        "odrl:assignee"
+                                      ]
+                                    },
+                                    {
+                                      "properties": {
+                                        "odrl:permission": {
+                                          "contains": {
+                                            "required": [
+                                              "odrl:assignee"
+                                            ]
+                                          }
+                                        }
+                                      },
+                                      "required": [
+                                        "odrl:permission"
+                                      ]
+                                    },
+                                    {
+                                      "properties": {
+                                        "odrl:prohibition": {
+                                          "contains": {
+                                            "required": [
+                                              "odrl:assignee"
+                                            ]
+                                          }
+                                        }
+                                      },
+                                      "required": [
+                                        "odrl:prohibition"
+                                      ]
+                                    }
+                                  ]
+                                }
+                              }
+                            ]
+                          }
+                        },
+                        {
+                          "if": {
+                            "properties": {
+                              "@type": {
+                                "contains": {
+                                  "const": "odrl:Assertion"
+                                }
+                              }
+                            },
+                            "required": [
+                              "@type"
+                            ]
+                          },
+                          "then": {
+                            "allOf": [
+                              {
+                                "$ref": "#/$defs/hasPermissionOrProhibition"
+                              },
+                              {
+                                "$ref": "#/$defs/hasTarget"
+                              },
+                              {
+                                "anyOf": [
+                                  {
+                                    "$ref": "#/$defs/hasAssigner"
+                                  },
+                                  {
+                                    "$ref": "#/$defs/hasAssignee"
+                                  }
+                                ]
+                              }
+                            ]
+                          }
+                        },
+                        {
+                          "if": {
+                            "properties": {
+                              "@type": {
+                                "contains": {
+                                  "const": "odrl:Privacy"
+                                }
+                              }
+                            },
+                            "required": [
+                              "@type"
+                            ]
+                          },
+                          "then": {
+                            "allOf": [
+                              {
+                                "$ref": "#/$defs/hasPermissionOrProhibition"
+                              },
+                              {
+                                "$ref": "#/$defs/hasTarget"
+                              },
+                              {
+                                "$ref": "#/$defs/hasAssigner"
+                              },
+                              {
+                                "$ref": "#/$defs/hasAssignee"
+                              },
+                              {
+                                "description": "The rules must include a duty describing obligations on the use of personal information.",
+                                "anyOf": [
+                                  {
+                                    "required": [
+                                      "odrl:obligation"
+                                    ]
+                                  },
+                                  {
+                                    "properties": {
+                                      "odrl:permission": {
+                                        "contains": {
+                                          "required": [
+                                            "odrl:duty"
+                                          ]
+                                        }
+                                      }
+                                    },
+                                    "required": [
+                                      "odrl:permission"
+                                    ]
+                                  }
+                                ]
+                              }
+                            ]
+                          }
+                        }
+                      ]
+                    }
+                  ],
+                  "properties": {
+                    "@context": {
+                      "type": "object",
+                      "description": "JSON-LD namespace prefixes for ODRL policy properties. Not required: an Offer embedded in a CDIF record inherits the record's @context.",
+                      "properties": {
+                        "odrl": {
+                          "const": "http://www.w3.org/ns/odrl/2/"
+                        },
+                        "cdifa1": {
+                          "const": "https://w3id.org/cdif/access/profile1/"
+                        },
+                        "rdf": {
+                          "const": "http://www.w3.org/1999/02/22-rdf-syntax-ns#"
+                        },
+                        "xsd": {
+                          "const": "http://www.w3.org/2001/XMLSchema#"
+                        }
+                      }
+                    },
+                    "@type": {
+                      "description": "Always includes odrl:Offer.",
+                      "contains": {
+                        "const": "odrl:Offer"
+                      }
+                    },
+                    "@id": {
+                      "description": "Globally unique, resolvable IRI for this Offer (the spreadsheet's uid). A resolver should be able to return application/ld+json, not only an HTML page."
+                    },
+                    "odrl:profile": {
+                      "description": "The CDIF Access ODRL profile this policy uses, which supplies the cdifa1: actions the ODRL core vocabulary lacks (download, assent, datadestruction, ...). OPEN: nothing is published at this IRI yet, and it names a .ttl file where ODRL expects a profile identifier. The cdifa1: form is accepted because compaction under the cdifa1 prefix rewrites the full IRI to it.",
+                      "type": "object",
+                      "properties": {
+                        "@id": {
+                          "enum": [
+                            "https://w3id.org/cdif/access/profile1/cdifa1.ttl",
+                            "cdifa1:cdifa1.ttl"
+                          ]
+                        }
+                      },
+                      "required": [
+                        "@id"
+                      ]
+                    },
+                    "odrl:target": {
+                      "$ref": "#/$defs/Target",
+                      "description": "Asset all rules apply to, if given once at policy level (range odrl:Asset)."
+                    },
+                    "odrl:assigner": {
+                      "$ref": "#/$defs/PartyRef",
+                      "description": "The party issuing the Offer, normally the repository or data custodian, given once at policy level (range odrl:Party). ODRL also accepts an assigner on every rule instead; CDIF asks for the policy-level form. The spreadsheet does not list an assigner yet."
+                    },
+                    "odrl:assignee": {
+                      "$ref": "#/$defs/PartyRef",
+                      "description": "Party all rules apply to, if given once at policy level (range odrl:Party)."
+                    },
+                    "odrl:permission": {
+                      "description": "Actions a user may perform on the target (usage conditions).",
+                      "type": "array",
+                      "minItems": 1,
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "odrl:target": {
+                            "$ref": "#/$defs/Target",
+                            "description": "The asset, normally a distribution or data service (range odrl:Asset)."
+                          },
+                          "odrl:output": {
+                            "$ref": "#/$defs/Target",
+                            "description": "An asset created by exercising the action (range odrl:Asset)."
+                          },
+                          "odrl:action": {
+                            "$ref": "#/$defs/OdrlAction",
+                            "description": "The permitted action (range odrl:Action). OPEN: the cdifa1 action vocabulary is not defined, so values are not enumerated; whether it is an ODRL profile or a standalone controlled vocabulary is still to be settled."
+                          },
+                          "odrl:assigner": {
+                            "$ref": "#/$defs/PartyRef",
+                            "description": "Party granting this permission, if not given at policy level (range odrl:Party)."
+                          },
+                          "odrl:assignee": {
+                            "$ref": "#/$defs/PartyRef",
+                            "description": "Who may exercise the permission (range odrl:Party), as a party or a (refined) PartyCollection, e.g. registered users located in the UK. This is the book's form; the spreadsheet scopes users with odrl:constraint instead. OPEN: settle on one, or say when each is used."
+                          },
+                          "odrl:constraint": {
+                            "description": "Conditions on exercising the permission (range odrl:Constraint), e.g. only users located in the UK (the spreadsheet's way of scoping users; see odrl:assignee).",
+                            "type": "array",
+                            "items": {
+                              "$ref": "#/$defs/OdrlConstraint"
+                            }
+                          },
+                          "odrl:duty": {
+                            "description": "Access conditions (range odrl:Duty): actions that must be completed before the permitted action, e.g. assent to an End User Licence before download.",
+                            "type": "array",
+                            "items": {
+                              "description": "A permission duty carrying the accessConditionMarker. The spreadsheet gives the duty action as 1..*; ODRL allows one action per rule, so several pre-conditions are several duties. OPEN: the spreadsheet does not say what an assent duty assents to (e.g. which licence document); a duty target is one candidate. OPEN: the spreadsheet lists constraint @type with cardinality 1 but gives no value and omits it on this constraint, so it is optional.",
+                              "type": "object",
+                              "properties": {
+                                "odrl:action": {
+                                  "$ref": "#/$defs/OdrlAction",
+                                  "description": "The action to complete first, e.g. cdifa1:assent (range odrl:Action)."
+                                },
+                                "odrl:constraint": {
+                                  "description": "Must include the accessConditionMarker (range odrl:Constraint).",
+                                  "type": "array",
+                                  "items": {
+                                    "$ref": "#/$defs/OdrlConstraint"
+                                  },
+                                  "contains": {
+                                    "description": "The constraint odrl:event odrl:lt odrl:policyUsage: the duty must be fulfilled before the permission is exercised. In CDIF Access this is what marks a duty as an access condition. Each operand accepts the odrl: compact IRI and the full IRI.",
+                                    "type": "object",
+                                    "properties": {
+                                      "odrl:leftOperand": {
+                                        "type": "object",
+                                        "properties": {
+                                          "@id": {
+                                            "enum": [
+                                              "odrl:event",
+                                              "http://www.w3.org/ns/odrl/2/event"
+                                            ]
+                                          }
+                                        },
+                                        "required": [
+                                          "@id"
+                                        ]
+                                      },
+                                      "odrl:operator": {
+                                        "type": "object",
+                                        "properties": {
+                                          "@id": {
+                                            "enum": [
+                                              "odrl:lt",
+                                              "http://www.w3.org/ns/odrl/2/lt"
+                                            ]
+                                          }
+                                        },
+                                        "required": [
+                                          "@id"
+                                        ]
+                                      },
+                                      "odrl:rightOperand": {
+                                        "type": "object",
+                                        "properties": {
+                                          "@id": {
+                                            "enum": [
+                                              "odrl:policyUsage",
+                                              "http://www.w3.org/ns/odrl/2/policyUsage"
+                                            ]
+                                          }
+                                        },
+                                        "required": [
+                                          "@id"
+                                        ]
+                                      }
+                                    },
+                                    "required": [
+                                      "odrl:leftOperand",
+                                      "odrl:operator",
+                                      "odrl:rightOperand"
+                                    ]
+                                  }
+                                }
+                              },
+                              "required": [
+                                "odrl:action",
+                                "odrl:constraint"
+                              ]
+                            }
+                          }
+                        },
+                        "required": [
+                          "odrl:target",
+                          "odrl:action"
+                        ]
+                      }
+                    },
+                    "odrl:obligation": {
+                      "description": "Actions every user of the target must perform (range odrl:Duty), e.g. destroy the data at the end of a project. The spreadsheet gives 1..*; drafted as 0..* because an Offer with only permissions is common. OPEN: confirm.",
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/$defs/Duty"
+                      }
+                    },
+                    "odrl:prohibition": {
+                      "description": "Actions a user must not perform (range odrl:Prohibition), e.g. share TRE credentials.",
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "odrl:target": {
+                            "$ref": "#/$defs/Target",
+                            "description": "The asset (range odrl:Asset)."
+                          },
+                          "odrl:output": {
+                            "$ref": "#/$defs/Target",
+                            "description": "An asset created by exercising the action (range odrl:Asset)."
+                          },
+                          "odrl:action": {
+                            "$ref": "#/$defs/OdrlAction",
+                            "description": "The prohibited action (range odrl:Action)."
+                          },
+                          "odrl:assigner": {
+                            "$ref": "#/$defs/PartyRef",
+                            "description": "Party issuing this prohibition, if not given at policy level (range odrl:Party)."
+                          },
+                          "odrl:assignee": {
+                            "$ref": "#/$defs/PartyRef",
+                            "description": "Who the prohibition applies to (range odrl:Party)."
+                          },
+                          "odrl:constraint": {
+                            "description": "Conditions under which the prohibition applies (range odrl:Constraint).",
+                            "type": "array",
+                            "items": {
+                              "$ref": "#/$defs/OdrlConstraint"
+                            }
+                          },
+                          "odrl:remedy": {
+                            "description": "Duties owed if the prohibition is infringed (range odrl:Duty).",
+                            "type": "array",
+                            "items": {
+                              "$ref": "#/$defs/Duty"
+                            }
+                          }
+                        },
+                        "required": [
+                          "odrl:target",
+                          "odrl:action"
+                        ]
+                      }
+                    }
+                  },
+                  "required": [
+                    "@type",
+                    "@id",
+                    "odrl:profile",
+                    "odrl:assigner",
+                    "odrl:permission"
+                  ]
+                }
+              ]
+            }
+          }
+        }
+      }
+    }
+  },
+  "anyOf": [
+    {
+      "required": [
+        "schema:distribution"
+      ],
+      "properties": {
+        "schema:distribution": {
+          "contains": {
+            "type": "object",
+            "required": [
+              "odrl:hasPolicy"
+            ]
+          }
+        }
+      }
+    },
+    {
+      "required": [
+        "schema:conditionsOfAccess"
+      ],
+      "properties": {
+        "schema:conditionsOfAccess": {
+          "contains": {
+            "type": "object",
+            "required": [
+              "@id"
+            ]
+          }
+        }
+      }
+    }
+  ],
+  "$defs": {
+    "ObjectReference": {
+      "title": "Object Reference",
+      "description": "A reference to a node defined elsewhere, by its @id.",
+      "type": "object",
+      "properties": {
+        "@id": {
+          "type": "string",
+          "description": "resolvable @id of the referenced node"
+        }
+      },
+      "required": [
+        "@id"
+      ],
+      "additionalProperties": false
+    },
+    "OdrlConstraint": {
+      "title": "ODRL Constraint",
+      "description": "An ODRL 2.2 Constraint (https://www.w3.org/TR/odrl-model/#constraint) or LogicalConstraint (https://www.w3.org/TR/odrl-model/#constraint-logical). A Constraint compares a left operand with a right operand using an operator, e.g. odrl:spatial odrl:eq <country>. A LogicalConstraint combines constraints with exactly one of odrl:and, odrl:or, odrl:xone or odrl:andSequence. Operands and operators are open IRIs (odrlTerms), so ODRL profile terms validate.",
+      "type": "object",
+      "properties": {
+        "@context": {
+          "type": "object",
+          "description": "JSON-LD namespace prefixes for ODRL properties.",
+          "properties": {
+            "odrl": {
+              "const": "http://www.w3.org/ns/odrl/2/"
+            }
+          }
+        }
+      },
+      "anyOf": [
+        {
+          "type": "object",
+          "properties": {
+            "@id": {
+              "description": "Optional; needed when a LogicalConstraint refers to this constraint by reference.",
+              "type": "string",
+              "format": "iri"
+            },
+            "@type": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              },
+              "contains": {
+                "const": "odrl:Constraint"
+              }
+            },
+            "odrl:leftOperand": {
+              "description": "Reference to an ODRL LeftOperand left operand. Open: any IRI is accepted, so ODRL profile terms (e.g. cdifa1:) validate; the examples list the 32 non-deprecated ODRL 2.2 LeftOperand terms.",
+              "type": "object",
+              "properties": {
+                "@id": {
+                  "type": "string",
+                  "examples": [
+                    "odrl:absolutePosition",
+                    "odrl:absoluteSize",
+                    "odrl:absoluteSpatialPosition",
+                    "odrl:absoluteTemporalPosition",
+                    "odrl:count",
+                    "odrl:dateTime",
+                    "odrl:delayPeriod",
+                    "odrl:deliveryChannel",
+                    "odrl:elapsedTime",
+                    "odrl:event",
+                    "odrl:fileFormat",
+                    "odrl:industry",
+                    "odrl:language",
+                    "odrl:media",
+                    "odrl:meteredTime",
+                    "odrl:payAmount",
+                    "odrl:percentage",
+                    "odrl:product",
+                    "odrl:purpose",
+                    "odrl:recipient",
+                    "odrl:relativePosition",
+                    "odrl:relativeSize",
+                    "odrl:relativeSpatialPosition",
+                    "odrl:relativeTemporalPosition",
+                    "odrl:resolution",
+                    "odrl:spatial",
+                    "odrl:spatialCoordinates",
+                    "odrl:systemDevice",
+                    "odrl:timeInterval",
+                    "odrl:unitOfCount",
+                    "odrl:version",
+                    "odrl:virtualLocation"
+                  ]
+                }
+              },
+              "required": [
+                "@id"
+              ],
+              "additionalProperties": false
+            },
+            "odrl:operator": {
+              "description": "Reference to an ODRL Operator operator. Open: any IRI is accepted, so ODRL profile terms (e.g. cdifa1:) validate; the examples list the 12 non-deprecated ODRL 2.2 Operator terms.",
+              "type": "object",
+              "properties": {
+                "@id": {
+                  "type": "string",
+                  "examples": [
+                    "odrl:eq",
+                    "odrl:gt",
+                    "odrl:gteq",
+                    "odrl:hasPart",
+                    "odrl:isA",
+                    "odrl:isAllOf",
+                    "odrl:isAnyOf",
+                    "odrl:isNoneOf",
+                    "odrl:isPartOf",
+                    "odrl:lt",
+                    "odrl:lteq",
+                    "odrl:neq"
+                  ]
+                }
+              },
+              "required": [
+                "@id"
+              ],
+              "additionalProperties": false
+            },
+            "odrl:rightOperand": {
+              "description": "A literal, a value object ({\"@value\", \"@type\"}) or an {@id} reference."
+            },
+            "odrl:rightOperandReference": {
+              "$ref": "#/$defs/ObjectReference",
+              "description": "An IRI whose dereferenced value is the right operand."
+            },
+            "odrl:dataType": {
+              "$ref": "#/$defs/ObjectReference",
+              "description": "Datatype of the right operand, e.g. xsd:decimal."
+            },
+            "odrl:unit": {
+              "$ref": "#/$defs/ObjectReference",
+              "description": "Unit of the right operand, e.g. a currency or unit of measure."
+            },
+            "odrl:status": {
+              "description": "The current value of the left operand, for comparison with the right operand."
+            }
+          },
+          "required": [
+            "odrl:leftOperand",
+            "odrl:operator"
+          ],
+          "anyOf": [
+            {
+              "required": [
+                "odrl:rightOperand"
+              ]
+            },
+            {
+              "required": [
+                "odrl:rightOperandReference"
+              ]
+            }
+          ]
+        },
+        {
+          "type": "object",
+          "properties": {
+            "@id": {
+              "type": "string",
+              "format": "iri"
+            },
+            "@type": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              },
+              "contains": {
+                "const": "odrl:LogicalConstraint"
+              }
+            },
+            "odrl:and": {
+              "$ref": "#/$defs/constraintList",
+              "description": "All of the constraints must be satisfied."
+            },
+            "odrl:or": {
+              "$ref": "#/$defs/constraintList",
+              "description": "At least one of the constraints must be satisfied."
+            },
+            "odrl:xone": {
+              "$ref": "#/$defs/constraintList",
+              "description": "Exactly one of the constraints must be satisfied."
+            },
+            "odrl:andSequence": {
+              "$ref": "#/$defs/constraintList",
+              "description": "All of the constraints must be satisfied, in order."
+            }
+          },
+          "oneOf": [
+            {
+              "required": [
+                "odrl:and"
+              ]
+            },
+            {
+              "required": [
+                "odrl:or"
+              ]
+            },
+            {
+              "required": [
+                "odrl:xone"
+              ]
+            },
+            {
+              "required": [
+                "odrl:andSequence"
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    "Identifier": {
+      "description": "Properties for a schema.org identifier (schema:PropertyValue pattern).\n**Union-type policy:** In CDIF profile UML models an attribute typed as\nschema:Identifier / schema:PropertyValue is represented by a single attribute\nof that class type. The JSON Schema implementation permits the property value\nto be EITHER a plain string (interpreted as the bare identifier value) OR a\nfull schema:PropertyValue object (with explicit @type, propertyID, value).\nConsumers should accept either form.\n",
+      "type": "object",
+      "properties": {
+        "@type": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "contains": {
+            "const": "schema:PropertyValue"
+          },
+          "minItems": 1
+        },
+        "schema:propertyID": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "$ref": "#/$defs/ObjectReference"
+            }
+          ],
+          "description": "In this context for the schema:PropertyValue, this field is an identifier for the identifier schema, e.g. DOI, ARK.  Get values from https://registry.identifiers.org/registry/ for interoperability. URI-shape values MUST be serialized as JSON-LD IRI references ({\"@id\":\"...\"}) so they participate in RDF entailment; free-label strings remain valid as strings."
+        },
+        "schema:value": {
+          "type": "string",
+          "description": "the identifier string. E.g. 10.5066/F7VX0DMQ"
+        },
+        "schema:url": {
+          "type": "string",
+          "format": "uri",
+          "description": "web-resolveable string for the identifier; host name part is location of a resolver that will return some representation for the given identifier value. E.g. https://doi.org/10.5066/F7VX0DMQ "
+        }
+      },
+      "allOf": [
+        {
+          "required": [
+            "@type"
+          ]
+        },
+        {
+          "anyOf": [
+            {
+              "required": [
+                "schema:value"
+              ]
+            },
+            {
+              "required": [
+                "schema:url"
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    "OdrlAction": {
+      "title": "ODRL Action",
+      "description": "An ODRL 2.2 Action (https://www.w3.org/TR/odrl-model/#action) as used in a rule: either a reference to the action ({\"@id\": \"odrl:use\"}), or, when the action itself is narrowed, an object holding the action in rdf:value plus odrl:refinement constraints (e.g. print, at most 1200 dpi). Actions are open IRIs (odrlTerms), so ODRL profile actions validate.",
+      "type": "object",
+      "properties": {
+        "@context": {
+          "type": "object",
+          "description": "JSON-LD namespace prefixes for ODRL properties.",
+          "properties": {
+            "odrl": {
+              "const": "http://www.w3.org/ns/odrl/2/"
+            },
+            "rdf": {
+              "const": "http://www.w3.org/1999/02/22-rdf-syntax-ns#"
+            }
+          }
+        }
+      },
+      "anyOf": [
+        {
+          "description": "Reference to an ODRL Action action. Open: any IRI is accepted, so ODRL profile terms (e.g. cdifa1:) validate; the examples list the 42 non-deprecated ODRL 2.2 Action terms.",
+          "type": "object",
+          "properties": {
+            "@id": {
+              "type": "string",
+              "examples": [
+                "odrl:acceptTracking",
+                "odrl:aggregate",
+                "odrl:annotate",
+                "odrl:anonymize",
+                "odrl:archive",
+                "odrl:attribute",
+                "odrl:compensate",
+                "odrl:concurrentUse",
+                "odrl:delete",
+                "odrl:derive",
+                "odrl:digitize",
+                "odrl:display",
+                "odrl:distribute",
+                "odrl:ensureExclusivity",
+                "odrl:execute",
+                "odrl:extract",
+                "odrl:give",
+                "odrl:grantUse",
+                "odrl:include",
+                "odrl:index",
+                "odrl:inform",
+                "odrl:install",
+                "odrl:modify",
+                "odrl:move",
+                "odrl:nextPolicy",
+                "odrl:obtainConsent",
+                "odrl:play",
+                "odrl:present",
+                "odrl:print",
+                "odrl:read",
+                "odrl:reproduce",
+                "odrl:reviewPolicy",
+                "odrl:sell",
+                "odrl:stream",
+                "odrl:synchronize",
+                "odrl:textToSpeech",
+                "odrl:transfer",
+                "odrl:transform",
+                "odrl:translate",
+                "odrl:uninstall",
+                "odrl:use",
+                "odrl:watermark"
+              ]
+            }
+          },
+          "required": [
+            "@id"
+          ],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
+            "rdf:value": {
+              "description": "Reference to an ODRL Action action. Open: any IRI is accepted, so ODRL profile terms (e.g. cdifa1:) validate; the examples list the 42 non-deprecated ODRL 2.2 Action terms.",
+              "type": "object",
+              "properties": {
+                "@id": {
+                  "type": "string",
+                  "examples": [
+                    "odrl:acceptTracking",
+                    "odrl:aggregate",
+                    "odrl:annotate",
+                    "odrl:anonymize",
+                    "odrl:archive",
+                    "odrl:attribute",
+                    "odrl:compensate",
+                    "odrl:concurrentUse",
+                    "odrl:delete",
+                    "odrl:derive",
+                    "odrl:digitize",
+                    "odrl:display",
+                    "odrl:distribute",
+                    "odrl:ensureExclusivity",
+                    "odrl:execute",
+                    "odrl:extract",
+                    "odrl:give",
+                    "odrl:grantUse",
+                    "odrl:include",
+                    "odrl:index",
+                    "odrl:inform",
+                    "odrl:install",
+                    "odrl:modify",
+                    "odrl:move",
+                    "odrl:nextPolicy",
+                    "odrl:obtainConsent",
+                    "odrl:play",
+                    "odrl:present",
+                    "odrl:print",
+                    "odrl:read",
+                    "odrl:reproduce",
+                    "odrl:reviewPolicy",
+                    "odrl:sell",
+                    "odrl:stream",
+                    "odrl:synchronize",
+                    "odrl:textToSpeech",
+                    "odrl:transfer",
+                    "odrl:transform",
+                    "odrl:translate",
+                    "odrl:uninstall",
+                    "odrl:use",
+                    "odrl:watermark"
+                  ]
+                }
+              },
+              "required": [
+                "@id"
+              ],
+              "additionalProperties": false
+            },
+            "odrl:refinement": {
+              "type": "array",
+              "minItems": 1,
+              "items": {
+                "$ref": "#/$defs/OdrlConstraint"
+              }
+            }
+          },
+          "required": [
+            "rdf:value",
+            "odrl:refinement"
+          ]
+        }
+      ]
+    },
+    "Target": {
+      "description": "The asset, as a reference or an Asset or AssetCollection node.",
+      "anyOf": [
+        {
+          "$ref": "#/$defs/ObjectReference"
+        },
+        {
+          "title": "ODRL Asset",
+          "description": "An ODRL 2.2 Asset (https://www.w3.org/TR/odrl-model/#asset) or AssetCollection (https://www.w3.org/TR/odrl-model/#asset-collection): the resource a rule applies to. In CDIF this is normally a distribution or data service, identified by its IRI. An AssetCollection groups assets: either the collection itself, identified by @id, or a subset of one, where odrl:source names the collection and odrl:refinement narrows it (e.g. the CSV distributions of a dataset).",
+          "type": "object",
+          "properties": {
+            "@context": {
+              "type": "object",
+              "description": "JSON-LD namespace prefixes for ODRL properties.",
+              "properties": {
+                "odrl": {
+                  "const": "http://www.w3.org/ns/odrl/2/"
+                }
+              }
+            }
+          },
+          "anyOf": [
+            {
+              "type": "object",
+              "properties": {
+                "@type": {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  },
+                  "contains": {
+                    "const": "odrl:Asset"
+                  }
+                },
+                "@id": {
+                  "type": "string",
+                  "format": "iri"
+                },
+                "odrl:partOf": {
+                  "description": "AssetCollections this asset is a member of.",
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/$defs/ObjectReference"
+                  }
+                }
+              },
+              "required": [
+                "@type",
+                "@id"
+              ]
+            },
+            {
+              "description": "Per ODRL, a refined collection is identified through odrl:source, so odrl:refinement requires odrl:source.",
+              "type": "object",
+              "properties": {
+                "@type": {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  },
+                  "contains": {
+                    "const": "odrl:AssetCollection"
+                  }
+                },
+                "@id": {
+                  "type": "string",
+                  "format": "iri"
+                },
+                "odrl:source": {
+                  "$ref": "#/$defs/ObjectReference",
+                  "description": "The collection this one is drawn from."
+                },
+                "odrl:refinement": {
+                  "description": "Constraints selecting the members of odrl:source that belong to this collection.",
+                  "type": "array",
+                  "minItems": 1,
+                  "items": {
+                    "$ref": "#/$defs/OdrlConstraint"
+                  }
+                }
+              },
+              "required": [
+                "@type"
+              ],
+              "anyOf": [
+                {
+                  "required": [
+                    "@id"
+                  ]
+                },
+                {
+                  "required": [
+                    "odrl:source"
+                  ]
+                }
+              ],
+              "dependentRequired": {
+                "odrl:refinement": [
+                  "odrl:source"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    "PartyRef": {
+      "description": "A party, as a reference or a Party or PartyCollection node.",
+      "anyOf": [
+        {
+          "$ref": "#/$defs/ObjectReference"
+        },
+        {
+          "title": "ODRL Party",
+          "description": "An ODRL 2.2 Party (https://www.w3.org/TR/odrl-model/#party) or PartyCollection (https://www.w3.org/TR/odrl-model/#party-collection): who takes a role (assigner, assignee) in a rule. A Party is a person, organization or agent identified by its IRI. A PartyCollection is a group of parties: either the collection itself, identified by @id, or a subset of one, where odrl:source names the collection and odrl:refinement narrows it (e.g. registered users located in the UK).",
+          "type": "object",
+          "properties": {
+            "@context": {
+              "type": "object",
+              "description": "JSON-LD namespace prefixes for ODRL and schema.org properties.",
+              "properties": {
+                "odrl": {
+                  "const": "http://www.w3.org/ns/odrl/2/"
+                },
+                "schema": {
+                  "const": "http://schema.org/"
+                }
+              }
+            }
+          },
+          "anyOf": [
+            {
+              "description": "Typed odrl:Party, schema:Person or schema:Organization. ODRL declares odrl:Party a subclass of schema:Person or schema:Organization (among FOAF and vCard classes), and gives odrl:assigner and odrl:assignee the range odrl:Party, so a schema.org-typed node in those roles is an odrl:Party without saying so. A schema:Person is validated by the person block and a schema:Organization by the organization block. A person may also carry odrl:Party; an organization may not, because the organization block only accepts schema.org organization types in @type.",
+              "type": "object",
+              "properties": {
+                "@type": {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  }
+                },
+                "@id": {
+                  "type": "string",
+                  "format": "iri"
+                }
+              },
+              "required": [
+                "@type",
+                "@id"
+              ],
+              "anyOf": [
+                {
+                  "properties": {
+                    "@type": {
+                      "contains": {
+                        "const": "odrl:Party"
+                      }
+                    }
+                  }
+                },
+                {
+                  "properties": {
+                    "@type": {
+                      "contains": {
+                        "const": "schema:Person"
+                      }
+                    }
+                  }
+                },
+                {
+                  "properties": {
+                    "@type": {
+                      "contains": {
+                        "const": "schema:Organization"
+                      }
+                    }
+                  }
+                }
+              ],
+              "allOf": [
+                {
+                  "if": {
+                    "properties": {
+                      "@type": {
+                        "contains": {
+                          "const": "schema:Person"
+                        }
+                      }
+                    }
+                  },
+                  "then": {
+                    "description": "schema for cdif profile of schema.org/Person",
+                    "type": "object",
+                    "properties": {
+                      "@id": {
+                        "type": "string"
+                      },
+                      "@type": {
+                        "type": "array",
+                        "items": {
+                          "type": "string"
+                        },
+                        "contains": {
+                          "const": "schema:Person"
+                        },
+                        "minItems": 1
+                      },
+                      "schema:name": {
+                        "type": "string",
+                        "description": "string label for person that is meaningful for human users, should format consistently. Recommend 'Family Name, Given name' format."
+                      },
+                      "schema:description": {
+                        "type": "string",
+                        "description": "additional information about the agent or their relation to the described resource"
+                      },
+                      "schema:identifier": {
+                        "description": "identifier for person, recommend ORCID",
+                        "anyOf": [
+                          {
+                            "$ref": "#/$defs/Identifier"
+                          },
+                          {
+                            "type": "string"
+                          }
+                        ]
+                      },
+                      "schema:alternateName": {
+                        "type": "string",
+                        "description": "other labels by which the person might be known"
+                      },
+                      "schema:affiliation": {
+                        "type": "object",
+                        "properties": {
+                          "@id": {
+                            "type": "string"
+                          },
+                          "@type": {
+                            "default": [
+                              "schema:Organization"
+                            ],
+                            "type": "array",
+                            "items": {
+                              "anyOf": [
+                                {
+                                  "type": "string",
+                                  "enum": [
+                                    "schema:Organization",
+                                    "schema:FundingAgency",
+                                    "schema:Consortium",
+                                    "schema:Corporation",
+                                    "schema:EducationalOrganization",
+                                    "schema:FundingScheme",
+                                    "schema:GovernmentOrganization",
+                                    "schema:NGO",
+                                    "schema:Project",
+                                    "schema:ResearchOrganization"
+                                  ]
+                                }
+                              ]
+                            },
+                            "contains": {
+                              "const": "schema:Organization"
+                            },
+                            "minItems": 1
+                          },
+                          "schema:additionalType": {
+                            "type": "array",
+                            "items": {
+                              "title": "CDIF Concept-or-Term-or-String",
+                              "description": "Shared shape for a CDIF property that carries either a controlled-vocabulary value or a bare string label. Wraps cdifConceptOrTerm (SKOS-concept @id-ref, schema:DefinedTerm, or inline cdif:Concept) with a plain-string alternative used for legacy or single-word labels not yet bound to a vocabulary.",
+                              "anyOf": [
+                                {
+                                  "type": "string"
+                                },
+                                {
+                                  "description": "A SKOS concept identified by URI, a schema:DefinedTerm, or an inline cdif:Concept. Shared shape used wherever a CDIF property carries either a controlled-vocabulary reference or an inline concept definition.",
+                                  "anyOf": [
+                                    {
+                                      "$ref": "#/$defs/ObjectReference",
+                                      "description": "reference to a skos concept for the data type"
+                                    },
+                                    {
+                                      "description": "schema.org Defined Term schema.\n\n**Union-type policy:** In CDIF profile UML models an attribute typed as\nschema:DefinedTerm is represented by a single attribute of that class type.\nThe JSON Schema implementation permits the property value to be EITHER a\nplain string (interpreted as schema:name or schema:termCode in the default\nvocabulary) OR a full schema:DefinedTerm object (with explicit @type, name,\nidentifier, termCode, inDefinedTermSet). Consumers should accept either form.\n\nNote that this differs from the cdif Concept policy: a Concept (skos:Concept)\nin CDIF profiles MUST be a controlled-vocabulary entry (object form or\n@id-reference) — plain strings are not permitted for Concept-typed values\nbecause vocabulary identity cannot be recovered from an unscoped label.\n",
+                                      "type": "object",
+                                      "properties": {
+                                        "@type": {
+                                          "type": "array",
+                                          "items": {
+                                            "type": "string"
+                                          },
+                                          "contains": {
+                                            "const": "schema:DefinedTerm"
+                                          },
+                                          "minItems": 1
+                                        },
+                                        "schema:name": {
+                                          "type": "string",
+                                          "description": "text label for the term that is useful to human user"
+                                        },
+                                        "schema:identifier": {
+                                          "anyOf": [
+                                            {
+                                              "type": "string"
+                                            },
+                                            {
+                                              "$ref": "#/$defs/Identifier"
+                                            }
+                                          ]
+                                        },
+                                        "schema:inDefinedTermSet": {
+                                          "description": "The controlled vocabulary responsible for this keyword, as EITHER a plain URI string identifying the vocabulary, OR an object reference ({\"@id\": \"<uri>\"}) to a vocabulary defined elsewhere in the document. Both forms are already in use across CDIF profiles and downstream ADA building blocks; permitting only the string form made the object form - the natural JSON-LD spelling of a reference - invalid, while this class's own union-type policy above explicitly anticipates both.",
+                                          "anyOf": [
+                                            {
+                                              "type": "string"
+                                            },
+                                            {
+                                              "$ref": "#/$defs/ObjectReference"
+                                            }
+                                          ]
+                                        },
+                                        "schema:termCode": {
+                                          "type": "string",
+                                          "description": "A representative code for this keyword in the controlled vocabulary. Analogous to skos:Notation"
+                                        }
+                                      },
+                                      "allOf": [
+                                        {
+                                          "required": [
+                                            "@type"
+                                          ]
+                                        },
+                                        {
+                                          "anyOf": [
+                                            {
+                                              "required": [
+                                                "schema:name"
+                                              ]
+                                            },
+                                            {
+                                              "required": [
+                                                "schema:identifier"
+                                              ]
+                                            },
+                                            {
+                                              "required": [
+                                                "schema:termCode"
+                                              ]
+                                            }
+                                          ]
+                                        }
+                                      ]
+                                    },
+                                    {
+                                      "$ref": "#/$defs/Concept"
+                                    }
+                                  ]
+                                }
+                              ]
+                            }
+                          },
+                          "schema:name": {
+                            "type": "string",
+                            "description": "string label for organization that is meaningful for human users"
+                          },
+                          "schema:alternateName": {
+                            "type": "string",
+                            "description": "other labels by which the organization might be known"
+                          },
+                          "schema:description": {
+                            "type": "string",
+                            "description": "additional information about the agent or their relation to the described resource"
+                          },
+                          "schema:identifier": {
+                            "description": "identifier for organization",
+                            "anyOf": [
+                              {
+                                "$ref": "#/$defs/Identifier"
+                              },
+                              {
+                                "type": "string"
+                              }
+                            ]
+                          },
+                          "schema:sameAs": {
+                            "type": "array",
+                            "description": "other identifiers for the organization",
+                            "items": {
+                              "anyOf": [
+                                {
+                                  "type": "string"
+                                },
+                                {
+                                  "$ref": "#/$defs/ObjectReference"
+                                }
+                              ]
+                            }
+                          }
+                        },
+                        "allOf": [
+                          {
+                            "required": [
+                              "@type"
+                            ]
+                          },
+                          {
+                            "anyOf": [
+                              {
+                                "required": [
+                                  "schema:name"
+                                ]
+                              },
+                              {
+                                "required": [
+                                  "schema:identifier"
+                                ]
+                              }
+                            ]
+                          }
+                        ],
+                        "description": "if affiliation is present, value must be a schema:Organization."
+                      },
+                      "schema:contactPoint": {
+                        "type": "object",
+                        "description": "An email address or a contact web page (a form, an issue tracker), or both; at least one is required. Schema.org also allows telephone and postal contacts. A URL-only contact is ordinary in DCAT (a vcard:Kind with only vcard:hasURL), so requiring email made such records invalid.",
+                        "properties": {
+                          "@type": {
+                            "default": [
+                              "schema:ContactPoint"
+                            ],
+                            "type": "array",
+                            "items": {
+                              "type": "string"
+                            },
+                            "contains": {
+                              "const": "schema:ContactPoint"
+                            },
+                            "minItems": 1
+                          },
+                          "schema:email": {
+                            "type": "string"
+                          },
+                          "schema:url": {
+                            "type": "string",
+                            "format": "uri"
+                          }
+                        },
+                        "required": [
+                          "@type"
+                        ],
+                        "anyOf": [
+                          {
+                            "required": [
+                              "schema:email"
+                            ]
+                          },
+                          {
+                            "required": [
+                              "schema:url"
+                            ]
+                          }
+                        ]
+                      },
+                      "schema:sameAs": {
+                        "type": "array",
+                        "description": "other identifiers for the person",
+                        "items": {
+                          "anyOf": [
+                            {
+                              "type": "string"
+                            },
+                            {
+                              "$ref": "#/$defs/ObjectReference"
+                            }
+                          ]
+                        }
+                      }
+                    },
+                    "allOf": [
+                      {
+                        "required": [
+                          "@type"
+                        ]
+                      },
+                      {
+                        "anyOf": [
+                          {
+                            "required": [
+                              "schema:name"
+                            ]
+                          },
+                          {
+                            "required": [
+                              "schema:identifier"
+                            ]
+                          }
+                        ]
+                      }
+                    ]
+                  }
+                },
+                {
+                  "if": {
+                    "properties": {
+                      "@type": {
+                        "contains": {
+                          "const": "schema:Organization"
+                        }
+                      }
+                    }
+                  },
+                  "then": {
+                    "type": "object",
+                    "properties": {
+                      "@id": {
+                        "type": "string"
+                      },
+                      "@type": {
+                        "default": [
+                          "schema:Organization"
+                        ],
+                        "type": "array",
+                        "items": {
+                          "anyOf": [
+                            {
+                              "type": "string",
+                              "enum": [
+                                "schema:Organization",
+                                "schema:FundingAgency",
+                                "schema:Consortium",
+                                "schema:Corporation",
+                                "schema:EducationalOrganization",
+                                "schema:FundingScheme",
+                                "schema:GovernmentOrganization",
+                                "schema:NGO",
+                                "schema:Project",
+                                "schema:ResearchOrganization"
+                              ]
+                            }
+                          ]
+                        },
+                        "contains": {
+                          "const": "schema:Organization"
+                        },
+                        "minItems": 1
+                      },
+                      "schema:additionalType": {
+                        "type": "array",
+                        "items": {
+                          "title": "CDIF Concept-or-Term-or-String",
+                          "description": "Shared shape for a CDIF property that carries either a controlled-vocabulary value or a bare string label. Wraps cdifConceptOrTerm (SKOS-concept @id-ref, schema:DefinedTerm, or inline cdif:Concept) with a plain-string alternative used for legacy or single-word labels not yet bound to a vocabulary.",
+                          "anyOf": [
+                            {
+                              "type": "string"
+                            },
+                            {
+                              "description": "A SKOS concept identified by URI, a schema:DefinedTerm, or an inline cdif:Concept. Shared shape used wherever a CDIF property carries either a controlled-vocabulary reference or an inline concept definition.",
+                              "anyOf": [
+                                {
+                                  "$ref": "#/$defs/ObjectReference",
+                                  "description": "reference to a skos concept for the data type"
+                                },
+                                {
+                                  "description": "schema.org Defined Term schema.\n\n**Union-type policy:** In CDIF profile UML models an attribute typed as\nschema:DefinedTerm is represented by a single attribute of that class type.\nThe JSON Schema implementation permits the property value to be EITHER a\nplain string (interpreted as schema:name or schema:termCode in the default\nvocabulary) OR a full schema:DefinedTerm object (with explicit @type, name,\nidentifier, termCode, inDefinedTermSet). Consumers should accept either form.\n\nNote that this differs from the cdif Concept policy: a Concept (skos:Concept)\nin CDIF profiles MUST be a controlled-vocabulary entry (object form or\n@id-reference) — plain strings are not permitted for Concept-typed values\nbecause vocabulary identity cannot be recovered from an unscoped label.\n",
+                                  "type": "object",
+                                  "properties": {
+                                    "@type": {
+                                      "type": "array",
+                                      "items": {
+                                        "type": "string"
+                                      },
+                                      "contains": {
+                                        "const": "schema:DefinedTerm"
+                                      },
+                                      "minItems": 1
+                                    },
+                                    "schema:name": {
+                                      "type": "string",
+                                      "description": "text label for the term that is useful to human user"
+                                    },
+                                    "schema:identifier": {
+                                      "anyOf": [
+                                        {
+                                          "type": "string"
+                                        },
+                                        {
+                                          "$ref": "#/$defs/Identifier"
+                                        }
+                                      ]
+                                    },
+                                    "schema:inDefinedTermSet": {
+                                      "description": "The controlled vocabulary responsible for this keyword, as EITHER a plain URI string identifying the vocabulary, OR an object reference ({\"@id\": \"<uri>\"}) to a vocabulary defined elsewhere in the document. Both forms are already in use across CDIF profiles and downstream ADA building blocks; permitting only the string form made the object form - the natural JSON-LD spelling of a reference - invalid, while this class's own union-type policy above explicitly anticipates both.",
+                                      "anyOf": [
+                                        {
+                                          "type": "string"
+                                        },
+                                        {
+                                          "$ref": "#/$defs/ObjectReference"
+                                        }
+                                      ]
+                                    },
+                                    "schema:termCode": {
+                                      "type": "string",
+                                      "description": "A representative code for this keyword in the controlled vocabulary. Analogous to skos:Notation"
+                                    }
+                                  },
+                                  "allOf": [
+                                    {
+                                      "required": [
+                                        "@type"
+                                      ]
+                                    },
+                                    {
+                                      "anyOf": [
+                                        {
+                                          "required": [
+                                            "schema:name"
+                                          ]
+                                        },
+                                        {
+                                          "required": [
+                                            "schema:identifier"
+                                          ]
+                                        },
+                                        {
+                                          "required": [
+                                            "schema:termCode"
+                                          ]
+                                        }
+                                      ]
+                                    }
+                                  ]
+                                },
+                                {
+                                  "$ref": "#/$defs/Concept"
+                                }
+                              ]
+                            }
+                          ]
+                        }
+                      },
+                      "schema:name": {
+                        "type": "string",
+                        "description": "string label for organization that is meaningful for human users"
+                      },
+                      "schema:alternateName": {
+                        "type": "string",
+                        "description": "other labels by which the organization might be known"
+                      },
+                      "schema:description": {
+                        "type": "string",
+                        "description": "additional information about the agent or their relation to the described resource"
+                      },
+                      "schema:identifier": {
+                        "description": "identifier for organization",
+                        "anyOf": [
+                          {
+                            "$ref": "#/$defs/Identifier"
+                          },
+                          {
+                            "type": "string"
+                          }
+                        ]
+                      },
+                      "schema:sameAs": {
+                        "type": "array",
+                        "description": "other identifiers for the organization",
+                        "items": {
+                          "anyOf": [
+                            {
+                              "type": "string"
+                            },
+                            {
+                              "$ref": "#/$defs/ObjectReference"
+                            }
+                          ]
+                        }
+                      }
+                    },
+                    "allOf": [
+                      {
+                        "required": [
+                          "@type"
+                        ]
+                      },
+                      {
+                        "anyOf": [
+                          {
+                            "required": [
+                              "schema:name"
+                            ]
+                          },
+                          {
+                            "required": [
+                              "schema:identifier"
+                            ]
+                          }
+                        ]
+                      }
+                    ]
+                  }
+                }
+              ]
+            },
+            {
+              "description": "Per ODRL, a refined collection is identified through odrl:source, so odrl:refinement requires odrl:source.",
+              "type": "object",
+              "properties": {
+                "@type": {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  },
+                  "contains": {
+                    "const": "odrl:PartyCollection"
+                  }
+                },
+                "@id": {
+                  "type": "string",
+                  "format": "iri"
+                },
+                "odrl:source": {
+                  "$ref": "#/$defs/ObjectReference",
+                  "description": "The collection this one is drawn from."
+                },
+                "odrl:refinement": {
+                  "description": "Constraints selecting the members of odrl:source that belong to this collection.",
+                  "type": "array",
+                  "minItems": 1,
+                  "items": {
+                    "$ref": "#/$defs/OdrlConstraint"
+                  }
+                }
+              },
+              "required": [
+                "@type"
+              ],
+              "anyOf": [
+                {
+                  "required": [
+                    "@id"
+                  ]
+                },
+                {
+                  "required": [
+                    "odrl:source"
+                  ]
+                }
+              ],
+              "dependentRequired": {
+                "odrl:refinement": [
+                  "odrl:source"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    "Duty": {
+      "allOf": [
+        {
+          "$ref": "#/$defs/Rule"
+        },
+        {
+          "properties": {
+            "@type": {
+              "contains": {
+                "const": "odrl:Duty"
+              }
+            },
+            "odrl:consequence": {
+              "description": "Further duties owed if this duty is not fulfilled.",
+              "type": "array",
+              "items": {
+                "$ref": "#/$defs/Duty"
+              }
+            }
+          }
+        }
+      ]
+    },
+    "hasTarget": {
+      "description": "A target at policy level, or on every rule.",
+      "anyOf": [
+        {
+          "required": [
+            "odrl:target"
+          ]
+        },
+        {
+          "properties": {
+            "odrl:permission": {
+              "items": {
+                "required": [
+                  "odrl:target"
+                ]
+              }
+            },
+            "odrl:prohibition": {
+              "items": {
+                "required": [
+                  "odrl:target"
+                ]
+              }
+            },
+            "odrl:obligation": {
+              "items": {
+                "required": [
+                  "odrl:target"
+                ]
+              }
+            }
+          }
+        }
+      ]
+    },
+    "hasPermissionOrProhibition": {
+      "anyOf": [
+        {
+          "required": [
+            "odrl:permission"
+          ]
+        },
+        {
+          "required": [
+            "odrl:prohibition"
+          ]
+        }
+      ]
+    },
+    "hasAssigner": {
+      "description": "An assigner at policy level, or on every permission and prohibition.",
+      "anyOf": [
+        {
+          "required": [
+            "odrl:assigner"
+          ]
+        },
+        {
+          "properties": {
+            "odrl:permission": {
+              "items": {
+                "required": [
+                  "odrl:assigner"
+                ]
+              }
+            },
+            "odrl:prohibition": {
+              "items": {
+                "required": [
+                  "odrl:assigner"
+                ]
+              }
+            }
+          }
+        }
+      ]
+    },
+    "hasAssignee": {
+      "description": "An assignee at policy level, or on every permission and prohibition.",
+      "anyOf": [
+        {
+          "required": [
+            "odrl:assignee"
+          ]
+        },
+        {
+          "properties": {
+            "odrl:permission": {
+              "items": {
+                "required": [
+                  "odrl:assignee"
+                ]
+              }
+            },
+            "odrl:prohibition": {
+              "items": {
+                "required": [
+                  "odrl:assignee"
+                ]
+              }
+            }
+          }
+        }
+      ]
+    },
+    "Concept": {
+      "type": "object",
+      "properties": {
+        "@context": {
+          "description": "JSON-LD context declaring the skos namespace prefix. May be a single object or an array of strings and objects.",
+          "anyOf": [
+            {
+              "type": "object",
+              "properties": {
+                "skos": {
+                  "const": "http://www.w3.org/2004/02/skos/core#"
+                }
+              },
+              "required": [
+                "skos"
+              ]
+            },
+            {
+              "type": "array",
+              "items": {
+                "anyOf": [
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "object"
+                  }
+                ]
+              },
+              "contains": {
+                "type": "object",
+                "properties": {
+                  "skos": {
+                    "const": "http://www.w3.org/2004/02/skos/core#"
+                  }
+                },
+                "required": [
+                  "skos"
+                ]
+              }
+            }
+          ]
+        },
+        "@id": {
+          "type": "string",
+          "description": "URI identifier for this concept."
+        },
+        "@type": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "contains": {
+            "const": "skos:Concept"
+          },
+          "minItems": 1
+        },
+        "skos:prefLabel": {
+          "description": "Preferred lexical label for this concept. A single string, a single language-tagged value, or an array of language-tagged values. Each language should appear at most once.",
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "$ref": "#/$defs/LanguageTaggedValue"
+            },
+            {
+              "type": "array",
+              "items": {
+                "$ref": "#/$defs/LanguageTaggedValue"
+              }
+            }
+          ]
+        },
+        "skos:notation": {
+          "description": "Classification code for this concept within a scheme (a single notation string, consistent with CdifCodelistConcept).",
+          "type": "string"
+        },
+        "skos:definition": {
+          "description": "Formal explanation of the meaning of this concept.",
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "$ref": "#/$defs/LanguageTaggedValue"
+            },
+            {
+              "type": "array",
+              "items": {
+                "anyOf": [
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "$ref": "#/$defs/LanguageTaggedValue"
+                  }
+                ]
+              }
+            }
+          ]
+        },
+        "skos:scopeNote": {
+          "description": "Note clarifying meaning and/or intended use.",
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "$ref": "#/$defs/LanguageTaggedValue"
+            },
+            {
+              "type": "array",
+              "items": {
+                "anyOf": [
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "$ref": "#/$defs/LanguageTaggedValue"
+                  }
+                ]
+              }
+            }
+          ]
+        },
+        "skos:note": {
+          "description": "General note about this concept.",
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "$ref": "#/$defs/LanguageTaggedValue"
+            },
+            {
+              "type": "array",
+              "items": {
+                "anyOf": [
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "$ref": "#/$defs/LanguageTaggedValue"
+                  }
+                ]
+              }
+            }
+          ]
+        },
+        "skos:historyNote": {
+          "description": "Note about past state or use.",
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "$ref": "#/$defs/LanguageTaggedValue"
+            },
+            {
+              "type": "array",
+              "items": {
+                "anyOf": [
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "$ref": "#/$defs/LanguageTaggedValue"
+                  }
+                ]
+              }
+            }
+          ]
+        },
+        "skos:changeNote": {
+          "description": "Note documenting a change.",
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "$ref": "#/$defs/LanguageTaggedValue"
+            },
+            {
+              "type": "array",
+              "items": {
+                "anyOf": [
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "$ref": "#/$defs/LanguageTaggedValue"
+                  }
+                ]
+              }
+            }
+          ]
+        },
+        "skos:editorialNote": {
+          "description": "Note for editors and maintainers.",
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "$ref": "#/$defs/LanguageTaggedValue"
+            },
+            {
+              "type": "array",
+              "items": {
+                "anyOf": [
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "$ref": "#/$defs/LanguageTaggedValue"
+                  }
+                ]
+              }
+            }
+          ]
+        },
+        "skos:inScheme": {
+          "description": "Concept scheme(s) this concept belongs to.",
+          "anyOf": [
+            {
+              "$ref": "#/$defs/ObjectReference"
+            },
+            {
+              "type": "array",
+              "items": {
+                "$ref": "#/$defs/ObjectReference"
+              }
+            }
+          ]
+        },
+        "skos:topConceptOf": {
+          "description": "Concept scheme(s) for which this is a top concept.",
+          "anyOf": [
+            {
+              "$ref": "#/$defs/ObjectReference"
+            },
+            {
+              "type": "array",
+              "items": {
+                "$ref": "#/$defs/ObjectReference"
+              }
+            }
+          ]
+        },
+        "skos:broader": {
+          "description": "Broader (parent) concepts in the hierarchy. Items are inline concept objects or @id references.",
+          "type": "array",
+          "items": {
+            "anyOf": [
+              {
+                "$ref": "#/$defs/ObjectReference"
+              },
+              {
+                "$ref": "#/$defs/Concept"
+              }
+            ]
+          }
+        },
+        "skos:narrower": {
+          "description": "Narrower (child) concepts in the hierarchy. Items are inline concept objects or @id references.",
+          "type": "array",
+          "items": {
+            "anyOf": [
+              {
+                "$ref": "#/$defs/ObjectReference"
+              },
+              {
+                "$ref": "#/$defs/Concept"
+              }
+            ]
+          }
+        }
+      },
+      "required": [
+        "@type",
+        "skos:prefLabel",
+        "skos:definition",
+        "skos:inScheme"
+      ]
+    },
+    "Rule": {
+      "type": "object",
+      "properties": {
+        "@id": {
+          "type": "string",
+          "format": "iri"
+        },
+        "@type": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "odrl:target": {
+          "$ref": "#/$defs/Target"
+        },
+        "odrl:output": {
+          "$ref": "#/$defs/Target",
+          "description": "An asset created by exercising the action, e.g. the result of odrl:derive."
+        },
+        "odrl:action": {
+          "$ref": "#/$defs/OdrlAction"
+        },
+        "odrl:assigner": {
+          "$ref": "#/$defs/PartyRef"
+        },
+        "odrl:assignee": {
+          "$ref": "#/$defs/PartyRef"
+        },
+        "odrl:constraint": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/OdrlConstraint"
+          }
+        }
+      },
+      "required": [
+        "odrl:action"
+      ]
+    },
+    "constraintList": {
+      "description": "The operand constraints, as an RDF list ({\"@list\": [...]}), each inline or an {@id} reference.",
+      "type": "object",
+      "properties": {
+        "@list": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "anyOf": [
+              {
+                "$ref": "#/$defs/ObjectReference"
+              },
+              {
+                "type": "object",
+                "properties": {
+                  "@id": {
+                    "description": "Optional; needed when a LogicalConstraint refers to this constraint by reference.",
+                    "type": "string",
+                    "format": "iri"
+                  },
+                  "@type": {
+                    "type": "array",
+                    "items": {
+                      "type": "string"
+                    },
+                    "contains": {
+                      "const": "odrl:Constraint"
+                    }
+                  },
+                  "odrl:leftOperand": {
+                    "description": "Reference to an ODRL LeftOperand left operand. Open: any IRI is accepted, so ODRL profile terms (e.g. cdifa1:) validate; the examples list the 32 non-deprecated ODRL 2.2 LeftOperand terms.",
+                    "type": "object",
+                    "properties": {
+                      "@id": {
+                        "type": "string",
+                        "examples": [
+                          "odrl:absolutePosition",
+                          "odrl:absoluteSize",
+                          "odrl:absoluteSpatialPosition",
+                          "odrl:absoluteTemporalPosition",
+                          "odrl:count",
+                          "odrl:dateTime",
+                          "odrl:delayPeriod",
+                          "odrl:deliveryChannel",
+                          "odrl:elapsedTime",
+                          "odrl:event",
+                          "odrl:fileFormat",
+                          "odrl:industry",
+                          "odrl:language",
+                          "odrl:media",
+                          "odrl:meteredTime",
+                          "odrl:payAmount",
+                          "odrl:percentage",
+                          "odrl:product",
+                          "odrl:purpose",
+                          "odrl:recipient",
+                          "odrl:relativePosition",
+                          "odrl:relativeSize",
+                          "odrl:relativeSpatialPosition",
+                          "odrl:relativeTemporalPosition",
+                          "odrl:resolution",
+                          "odrl:spatial",
+                          "odrl:spatialCoordinates",
+                          "odrl:systemDevice",
+                          "odrl:timeInterval",
+                          "odrl:unitOfCount",
+                          "odrl:version",
+                          "odrl:virtualLocation"
+                        ]
+                      }
+                    },
+                    "required": [
+                      "@id"
+                    ],
+                    "additionalProperties": false
+                  },
+                  "odrl:operator": {
+                    "description": "Reference to an ODRL Operator operator. Open: any IRI is accepted, so ODRL profile terms (e.g. cdifa1:) validate; the examples list the 12 non-deprecated ODRL 2.2 Operator terms.",
+                    "type": "object",
+                    "properties": {
+                      "@id": {
+                        "type": "string",
+                        "examples": [
+                          "odrl:eq",
+                          "odrl:gt",
+                          "odrl:gteq",
+                          "odrl:hasPart",
+                          "odrl:isA",
+                          "odrl:isAllOf",
+                          "odrl:isAnyOf",
+                          "odrl:isNoneOf",
+                          "odrl:isPartOf",
+                          "odrl:lt",
+                          "odrl:lteq",
+                          "odrl:neq"
+                        ]
+                      }
+                    },
+                    "required": [
+                      "@id"
+                    ],
+                    "additionalProperties": false
+                  },
+                  "odrl:rightOperand": {
+                    "description": "A literal, a value object ({\"@value\", \"@type\"}) or an {@id} reference."
+                  },
+                  "odrl:rightOperandReference": {
+                    "$ref": "#/$defs/ObjectReference",
+                    "description": "An IRI whose dereferenced value is the right operand."
+                  },
+                  "odrl:dataType": {
+                    "$ref": "#/$defs/ObjectReference",
+                    "description": "Datatype of the right operand, e.g. xsd:decimal."
+                  },
+                  "odrl:unit": {
+                    "$ref": "#/$defs/ObjectReference",
+                    "description": "Unit of the right operand, e.g. a currency or unit of measure."
+                  },
+                  "odrl:status": {
+                    "description": "The current value of the left operand, for comparison with the right operand."
+                  }
+                },
+                "required": [
+                  "odrl:leftOperand",
+                  "odrl:operator"
+                ],
+                "anyOf": [
+                  {
+                    "required": [
+                      "odrl:rightOperand"
+                    ]
+                  },
+                  {
+                    "required": [
+                      "odrl:rightOperandReference"
+                    ]
+                  }
+                ]
+              }
+            ]
+          }
+        }
+      },
+      "required": [
+        "@list"
+      ]
+    },
+    "LanguageTaggedValue": {
+      "type": "object",
+      "description": "An RDF literal value with a language tag, serialized as a JSON-LD value object.",
+      "properties": {
+        "@value": {
+          "type": "string",
+          "description": "The text content."
+        },
+        "@language": {
+          "type": "string",
+          "description": "BCP 47 language tag (e.g. en, fr, de)."
+        }
+      },
+      "required": [
+        "@value",
+        "@language"
+      ]
+    }
+  }
+}

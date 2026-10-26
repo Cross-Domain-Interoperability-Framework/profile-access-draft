@@ -1,0 +1,590 @@
+@prefix cdifd: <https://cdif.org/validation/0.1/shacl#> .
+@prefix dcterms: <http://purl.org/dc/terms/> .
+@prefix odrl: <http://www.w3.org/ns/odrl/2/> .
+@prefix rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
+@prefix schema: <http://schema.org/> .
+@prefix sh: <http://www.w3.org/ns/shacl#> .
+@prefix skos: <http://www.w3.org/2004/02/skos/core#> .
+@prefix xsd: <http://www.w3.org/2001/XMLSchema#> .
+
+cdifd:CDIFAccessConformsToShape a sh:NodeShape ;
+    sh:property [ a sh:PropertyShape ;
+            sh:hasValue <https://w3id.org/cdif/access/1.1> ;
+            sh:message "A subjectOf catalog record on a CDIF Access dataset should include dcterms:conformsTo <https://w3id.org/cdif/access/1.1>." ;
+            sh:minCount 1 ;
+            sh:path dcterms:conformsTo ;
+            sh:severity sh:Warning ] ;
+    sh:target [ a sh:SPARQLTarget ;
+            sh:select """
+                PREFIX schema: <http://schema.org/>
+                SELECT ?this WHERE {
+                    ?dataset schema:subjectOf ?this .
+                    ?dataset a schema:Dataset .
+                }
+            """ ] .
+
+cdifd:CDIFAccessDatasetShape a sh:NodeShape ;
+    sh:message "A CDIF Access dataset must have an ODRL policy: odrl:hasPolicy on a schema:distribution, or the policy IRI in schema:conditionsOfAccess." ;
+    sh:or ( [ sh:minCount 1 ;
+                sh:path ( schema:distribution odrl:hasPolicy ) ] [ sh:path schema:conditionsOfAccess ;
+                sh:qualifiedMinCount 1 ;
+                sh:qualifiedValueShape [ sh:nodeKind sh:IRI ] ] ) ;
+    sh:target [ a sh:SPARQLTarget ;
+            sh:select """
+            PREFIX schema: <http://schema.org/>
+            SELECT ?this
+            WHERE {
+              ?this a schema:Dataset .
+              MINUS {
+                ?this schema:about ?x .
+                ?this schema:additionalType ?at .
+                FILTER( ?at = <http://www.w3.org/ns/dcat#CatalogRecord> || STR(?at) = "dcat:CatalogRecord" )
+              }
+            }
+          """ ] .
+
+cdifd:CDIFAccessHasPolicyShape a sh:NodeShape ;
+    sh:property [ sh:message "odrl:hasPolicy must be the policy's IRI (an inline Offer must have an @id)." ;
+            sh:nodeKind sh:IRI ;
+            sh:path odrl:hasPolicy ] ;
+    sh:targetSubjectsOf odrl:hasPolicy .
+
+cdifd:CDIFAccessOfferShape a sh:NodeShape ;
+    sh:property [ sh:hasValue <https://w3id.org/cdif/access/profile1/cdifa1.ttl> ;
+            sh:message "A CDIF Access Offer must declare odrl:profile <https://w3id.org/cdif/access/profile1/cdifa1.ttl>." ;
+            sh:minCount 1 ;
+            sh:path odrl:profile ],
+        [ sh:message "A CDIF Access Offer must name its assigner (the repository or data custodian) once, at policy level." ;
+            sh:minCount 1 ;
+            sh:path odrl:assigner ],
+        [ sh:message "A CDIF Access Offer must have at least one odrl:permission." ;
+            sh:minCount 1 ;
+            sh:path odrl:permission ],
+        [ sh:node cdifd:CDIFAccessRuleTargetShape ;
+            sh:path [ sh:alternativePath ( odrl:permission odrl:prohibition ) ] ],
+        [ sh:node cdifd:CDIFAccessConditionShape ;
+            sh:path ( odrl:permission odrl:duty ) ] ;
+    sh:targetClass odrl:Offer .
+
+cdifd:CDIFContactPointShape a sh:NodeShape ;
+    sh:message "a contact point should give an e-mail address or a contact web page (schema:url); an e-mail address is strongly recommended" ;
+    sh:or ( [ sh:property [ sh:minCount 1 ;
+                        sh:path schema:email ] ] [ sh:property [ sh:minCount 1 ;
+                        sh:path schema:url ] ] ) ;
+    sh:property [ sh:datatype xsd:string ;
+            sh:message "a contact point e-mail address should be well formed" ;
+            sh:path schema:email ;
+            sh:pattern "[a-z0-9._%+-]+@[a-z0-9.-]+\\.[a-z]{2,}$" ;
+            sh:severity sh:Info ],
+        [ sh:datatype xsd:string ;
+            sh:message "a contact point web page should be an http(s) URL" ;
+            sh:path schema:url ;
+            sh:pattern "^https?://[^\\s]+$" ;
+            sh:severity sh:Info ] ;
+    sh:severity sh:Info ;
+    sh:targetClass schema:ContactPoint .
+
+cdifd:CDIFDefinedTermShape a sh:NodeShape ;
+    sh:message "A DefinedTerm must have a name (label), an identifier, OR a termCode. All three are recommended." ;
+    sh:or ( [ sh:property [ sh:message "a defined term should have an identifier that is a resolvable URI" ;
+                        sh:minCount 1 ;
+                        sh:or ( [ sh:datatype xsd:string ] [ sh:and ( [ sh:class schema:PropertyValue ] [ sh:or ( [ sh:property [ sh:datatype xsd:string ;
+                                                                    sh:message "a value for the identifier should be provided; can provide either full URI or identifier token part of URI if a url is provided." ;
+                                                                    sh:minCount 1 ;
+                                                                    sh:path schema:value ] ] [ sh:property [ sh:datatype xsd:string ;
+                                                                    sh:message "value expected to be a resolvable http URI, but we aren't testing to see if the URL resolves..." ;
+                                                                    sh:minCount 1 ;
+                                                                    sh:path schema:url ;
+                                                                    sh:pattern "^https?:\\/\\/[^\\s]+$" ] ] ) ] ) ] ) ;
+                        sh:path schema:identifier ] ] [ sh:property cdifd:termLabelProperty ] [ sh:property [ sh:datatype xsd:string ;
+                        sh:message "a termCode (short code or notation) for the term within its vocabulary" ;
+                        sh:minCount 1 ;
+                        sh:path schema:termCode ] ] ) ;
+    sh:property [ sh:message "inDefinedTermSet identifies the controlled vocabulary from which this term comes; should be a URI or string identifier" ;
+            sh:minCount 0 ;
+            sh:or ( [ sh:nodeKind sh:IRI ] [ sh:datatype xsd:string ] ) ;
+            sh:path schema:inDefinedTermSet ;
+            sh:severity sh:Info ],
+        [ sh:datatype xsd:string ;
+            sh:message "termCode is a short code or notation for the term within its vocabulary (analogous to skos:notation)" ;
+            sh:minCount 0 ;
+            sh:path schema:termCode ;
+            sh:severity sh:Info ] ;
+    sh:target [ a sh:SPARQLTarget ;
+            sh:select """
+      PREFIX schema: <http://schema.org/>
+      SELECT DISTINCT ?this
+        WHERE {
+        ?this a schema:DefinedTerm .
+        {
+          ?this schema:name "example defined term" .
+          FILTER NOT EXISTS { ?s ?p ?this . }
+        }
+        Union
+        {
+         VALUES ?p {
+            schema:linkRelationship
+            schema:measurementTechnique
+            schema:keywords
+            schema:name
+          }
+         ?s ?p ?this .
+        }
+      }""" ] .
+
+cdifd:CDIFIdentifierShape a sh:NodeShape ;
+    sh:message "identifier rules. for an identifier, the property ID is expected to specify an identifier scheme.Get values from https://registry.identifiers.org/registry/ for interoperability",
+        "identifier rules. the context of an identifier, the PropertyValue provides the identifier value string-- either as a schema:value or a url. The value can be either a full URI or identifier token part of URI if a url is provided. url value must be a resolvable URI that identifies the resource." ;
+    sh:or ( [ sh:property [ sh:datatype xsd:string ;
+                        sh:message "identifier rules. a value for the identifier should be provided; can provide either full URI or identifier token part of URI if a url is provided." ;
+                        sh:minCount 1 ;
+                        sh:path schema:value ] ] [ sh:property [ sh:datatype xsd:string ;
+                        sh:message "identifier rules. schema:url is expected to be a resolvable HTTP URI, but we aren't testing to see if the URL resolves..." ;
+                        sh:minCount 1 ;
+                        sh:path schema:url ;
+                        sh:pattern "^https?:\\/\\/[^\\s]+$" ] ] ) ;
+    sh:property [ sh:minCount 1 ;
+            sh:or ( [ sh:nodeKind sh:IRI ] [ sh:datatype xsd:string ;
+                        sh:minLength 5 ] [ sh:class schema:DefinedTerm ] ) ;
+            sh:path schema:propertyID ;
+            sh:severity sh:Warning ] ;
+    sh:target [ a sh:SPARQLTarget ;
+            sh:select """
+      PREFIX schema: <http://schema.org/>
+      SELECT DISTINCT ?this
+        WHERE {
+        ?this a schema:PropertyValue .
+        {
+          ?this schema:propertyID "example identifier" .
+          FILTER NOT EXISTS { ?s ?p ?this . }
+        }
+        Union
+        {
+          ?s schema:identifier ?this .
+        }
+      }""" ] .
+
+cdifd:CDIFIdentifierTypeTermShape a sh:NodeShape ;
+    sh:message "identifier rules. A Term must have a name (label) or an identifier. It should have both!." ;
+    sh:property [ sh:message "identifier rules. a defined term should have an identifier that is a resolvable URI" ;
+            sh:minCount 1 ;
+            sh:or ( [ sh:nodeKind sh:Literal ] [ sh:and ( [ sh:class schema:PropertyValue ] [ sh:or ( [ sh:property [ sh:datatype xsd:string ;
+                                                        sh:message "identifier rules. a value for the identifier should be provided; can provide either full URI or identifier token part of URI if a url is provided." ;
+                                                        sh:minCount 1 ;
+                                                        sh:path schema:value ] ] [ sh:property [ sh:datatype xsd:string ;
+                                                        sh:message "identifier rules. value must be a resolvable URL, but we aren't testing to see if the URL resolves..... Can't get xsd:anyURI to work with JSON Schema validation..." ;
+                                                        sh:minCount 1 ;
+                                                        sh:path schema:url ;
+                                                        sh:pattern "^https?:\\/\\/[^\\s]+$" ] ] ) ] ) ] ) ;
+            sh:path schema:identifier ] ;
+    sh:target [ a sh:SPARQLTarget ;
+            sh:prefixes ( [ sh:namespace "http://schema.org/" ;
+                        sh:prefix "schema" ] ) ;
+            sh:select """
+      PREFIX schema: <http://schema.org/>
+      SELECT DISTINCT ?this
+        WHERE {
+          ?this a schema:DefinedTerm .
+          FILTER (
+            EXISTS { ?s schema:propertyID ?this . }
+          )
+        }""" ] .
+
+cdifd:CDIFOrganizationShape a sh:NodeShape ;
+    sh:message "Organization must have an @id IRI, a name or an identifier that is a string" ;
+    sh:or ( [ sh:nodeKind sh:IRI ] [ sh:property cdifd:nameProperty ] [ sh:property [ sh:message "an organization should have an identifier that is a URI; use of ORCID is strongly encouraged" ;
+                        sh:minCount 1 ;
+                        sh:nodeKind sh:IRIOrLiteral ;
+                        sh:path schema:identifier ] ] ) ;
+    sh:targetClass schema:Organization .
+
+cdifd:CDIFPersonShape a sh:NodeShape ;
+    sh:message "A person must have a name or an identifier provided; affiliation to an organization is recommended." ;
+    sh:or ( [ sh:property [ sh:message "a person should have an identifier that is a URI; use of ORCID is strongly encouraged" ;
+                        sh:minCount 1 ;
+                        sh:nodeKind sh:IRIOrLiteral ;
+                        sh:path schema:identifier ] ] [ sh:property cdifd:nameProperty ] ) ;
+    sh:property cdifd:affiliationProperty,
+        cdifd:contactPointProperty ;
+    sh:targetClass schema:Person .
+
+cdifd:ODRLActionShape a sh:NodeShape ;
+    sh:message "The value of odrl:action must be an action IRI (e.g. odrl:use), or a refined action with one rdf:value action IRI and at least one odrl:refinement." ;
+    sh:or ( [ sh:nodeKind sh:IRI ] [ sh:property [ sh:maxCount 1 ;
+                        sh:minCount 1 ;
+                        sh:nodeKind sh:IRI ;
+                        sh:path rdf:value ],
+                    [ sh:minCount 1 ;
+                        sh:path odrl:refinement ] ] ) ;
+    sh:targetObjectsOf odrl:action .
+
+cdifd:ODRLAgreementShape a sh:NodeShape ;
+    sh:sparql cdifd:policyHasAssignee,
+        cdifd:policyHasAssigner ;
+    sh:targetClass odrl:Agreement .
+
+cdifd:ODRLAssertionShape a sh:NodeShape ;
+    sh:sparql cdifd:policyHasAssignerOrAssignee,
+        cdifd:policyHasTarget ;
+    sh:targetClass odrl:Assertion .
+
+cdifd:ODRLAssetCollectionShape a sh:NodeShape ;
+    sh:message "An odrl:AssetCollection must have an @id IRI or an odrl:source; a refined collection (odrl:refinement) must name its odrl:source." ;
+    sh:or ( [ sh:maxCount 0 ;
+                sh:path odrl:refinement ] [ sh:minCount 1 ;
+                sh:path odrl:source ] ),
+        ( [ sh:nodeKind sh:IRI ] [ sh:minCount 1 ;
+                sh:path odrl:source ] ) ;
+    sh:property [ sh:maxCount 1 ;
+            sh:message "odrl:source of an AssetCollection must be a single IRI: the collection this one is drawn from." ;
+            sh:nodeKind sh:IRI ;
+            sh:path odrl:source ] ;
+    sh:targetClass odrl:AssetCollection .
+
+cdifd:ODRLAssetRoleShape a sh:NodeShape ;
+    sh:message "The value of odrl:target or odrl:output must be an asset IRI (e.g. a distribution's @id), or an odrl:AssetCollection." ;
+    sh:or ( [ sh:nodeKind sh:IRI ] [ sh:class odrl:AssetCollection ] ) ;
+    sh:targetObjectsOf odrl:output,
+        odrl:target .
+
+cdifd:ODRLAssetShape a sh:NodeShape ;
+    sh:message "An odrl:Asset must be identified by an IRI (@id)." ;
+    sh:nodeKind sh:IRI ;
+    sh:property [ sh:message "odrl:partOf must be the IRI of an AssetCollection." ;
+            sh:nodeKind sh:IRI ;
+            sh:path odrl:partOf ] ;
+    sh:targetClass odrl:Asset .
+
+cdifd:ODRLConstraintShape a sh:NodeShape ;
+    sh:message "An ODRL constraint must have an odrl:rightOperand or an odrl:rightOperandReference." ;
+    sh:or ( [ sh:minCount 1 ;
+                sh:path odrl:rightOperand ] [ sh:minCount 1 ;
+                sh:path odrl:rightOperandReference ] ) ;
+    sh:property [ sh:maxCount 1 ;
+            sh:message "An ODRL constraint must have exactly one odrl:leftOperand, given as an IRI (e.g. odrl:spatial)." ;
+            sh:minCount 1 ;
+            sh:nodeKind sh:IRI ;
+            sh:path odrl:leftOperand ],
+        [ sh:maxCount 1 ;
+            sh:message "An ODRL constraint must have exactly one odrl:operator, given as an IRI (e.g. odrl:eq)." ;
+            sh:minCount 1 ;
+            sh:nodeKind sh:IRI ;
+            sh:path odrl:operator ],
+        [ sh:message "odrl:rightOperandReference must be an IRI." ;
+            sh:nodeKind sh:IRI ;
+            sh:path odrl:rightOperandReference ],
+        [ sh:maxCount 1 ;
+            sh:message "odrl:dataType must be a single IRI (e.g. xsd:decimal)." ;
+            sh:nodeKind sh:IRI ;
+            sh:path odrl:dataType ],
+        [ sh:maxCount 1 ;
+            sh:message "odrl:unit must be a single IRI." ;
+            sh:nodeKind sh:IRI ;
+            sh:path odrl:unit ] ;
+    sh:targetClass odrl:Constraint ;
+    sh:targetSubjectsOf odrl:leftOperand,
+        odrl:operator,
+        odrl:rightOperand,
+        odrl:rightOperandReference .
+
+cdifd:ODRLConstraintSlotShape a sh:NodeShape ;
+    sh:message "The value of odrl:constraint or odrl:refinement must be a constraint (odrl:leftOperand, odrl:operator, odrl:rightOperand) or a logical constraint (odrl:and, odrl:or, odrl:xone or odrl:andSequence)." ;
+    sh:or ( [ sh:minCount 1 ;
+                sh:path odrl:leftOperand ] [ sh:minCount 1 ;
+                sh:path odrl:and ] [ sh:minCount 1 ;
+                sh:path odrl:or ] [ sh:minCount 1 ;
+                sh:path odrl:xone ] [ sh:minCount 1 ;
+                sh:path odrl:andSequence ] ) ;
+    sh:targetObjectsOf odrl:constraint,
+        odrl:refinement .
+
+cdifd:ODRLLogicalConstraintShape a sh:NodeShape ;
+    sh:message "An ODRL logical constraint must use exactly one of odrl:and, odrl:or, odrl:xone or odrl:andSequence." ;
+    sh:targetClass odrl:LogicalConstraint ;
+    sh:targetSubjectsOf odrl:and,
+        odrl:andSequence,
+        odrl:or,
+        odrl:xone ;
+    sh:xone ( [ sh:minCount 1 ;
+                sh:path odrl:and ] [ sh:minCount 1 ;
+                sh:path odrl:or ] [ sh:minCount 1 ;
+                sh:path odrl:xone ] [ sh:minCount 1 ;
+                sh:path odrl:andSequence ] ) .
+
+cdifd:ODRLOfferShape a sh:NodeShape ;
+    sh:sparql cdifd:policyHasAssigner ;
+    sh:targetClass odrl:Offer .
+
+cdifd:ODRLPartyCollectionShape a sh:NodeShape ;
+    sh:message "An odrl:PartyCollection must have an @id IRI or an odrl:source; a refined collection (odrl:refinement) must name its odrl:source." ;
+    sh:or ( [ sh:maxCount 0 ;
+                sh:path odrl:refinement ] [ sh:minCount 1 ;
+                sh:path odrl:source ] ),
+        ( [ sh:nodeKind sh:IRI ] [ sh:minCount 1 ;
+                sh:path odrl:source ] ) ;
+    sh:property [ sh:maxCount 1 ;
+            sh:message "odrl:source of a PartyCollection must be a single IRI: the collection this one is drawn from." ;
+            sh:nodeKind sh:IRI ;
+            sh:path odrl:source ] ;
+    sh:targetClass odrl:PartyCollection .
+
+cdifd:ODRLPartyRoleShape a sh:NodeShape ;
+    sh:message "The value of odrl:assigner or odrl:assignee must be a party IRI, or an odrl:PartyCollection." ;
+    sh:or ( [ sh:nodeKind sh:IRI ] [ sh:class odrl:PartyCollection ] ) ;
+    sh:targetObjectsOf odrl:assignee,
+        odrl:assigner .
+
+cdifd:ODRLPartyShape a sh:NodeShape ;
+    sh:message "An odrl:Party must be identified by an IRI (@id)." ;
+    sh:nodeKind sh:IRI ;
+    sh:targetClass odrl:Party .
+
+cdifd:ODRLPolicyPermissionOrProhibitionShape a sh:NodeShape ;
+    sh:message "An ODRL Offer, Agreement, Request, Ticket, Assertion or Privacy policy must have at least one odrl:permission or odrl:prohibition." ;
+    sh:or ( [ sh:minCount 1 ;
+                sh:path odrl:permission ] [ sh:minCount 1 ;
+                sh:path odrl:prohibition ] ) ;
+    sh:targetClass odrl:Agreement,
+        odrl:Assertion,
+        odrl:Offer,
+        odrl:Privacy,
+        odrl:Request,
+        odrl:Ticket .
+
+cdifd:ODRLPolicyShape a sh:NodeShape ;
+    sh:message "An ODRL policy must be identified by an IRI (@id) and have at least one odrl:permission, odrl:prohibition or odrl:obligation." ;
+    sh:nodeKind sh:IRI ;
+    sh:or ( [ sh:minCount 1 ;
+                sh:path odrl:permission ] [ sh:minCount 1 ;
+                sh:path odrl:prohibition ] [ sh:minCount 1 ;
+                sh:path odrl:obligation ] ) ;
+    sh:property [ sh:maxCount 1 ;
+            sh:message "A policy has at most one policy-level odrl:target; group several assets in an odrl:AssetCollection." ;
+            sh:path odrl:target ],
+        [ sh:maxCount 1 ;
+            sh:message "A policy has at most one policy-level odrl:assigner." ;
+            sh:path odrl:assigner ],
+        [ sh:maxCount 1 ;
+            sh:message "A policy has at most one policy-level odrl:assignee; group several parties in an odrl:PartyCollection." ;
+            sh:path odrl:assignee ],
+        [ sh:message "odrl:profile must be the IRI of an ODRL profile." ;
+            sh:nodeKind sh:IRI ;
+            sh:path odrl:profile ],
+        [ sh:message "odrl:inheritFrom must be the IRI of a parent policy." ;
+            sh:nodeKind sh:IRI ;
+            sh:path odrl:inheritFrom ],
+        [ sh:in ( odrl:perm odrl:prohibit odrl:invalid ) ;
+            sh:maxCount 1 ;
+            sh:message "odrl:conflict must be one of odrl:perm, odrl:prohibit or odrl:invalid." ;
+            sh:path odrl:conflict ] ;
+    sh:targetClass odrl:Agreement,
+        odrl:Assertion,
+        odrl:Offer,
+        odrl:Policy,
+        odrl:Privacy,
+        odrl:Request,
+        odrl:Set,
+        odrl:Ticket .
+
+cdifd:ODRLPrivacyShape a sh:NodeShape ;
+    sh:message "An ODRL Privacy policy must include a duty (an odrl:obligation, or an odrl:duty on a permission) describing obligations on the use of personal information." ;
+    sh:or ( [ sh:minCount 1 ;
+                sh:path odrl:obligation ] [ sh:minCount 1 ;
+                sh:path ( odrl:permission odrl:duty ) ] ) ;
+    sh:sparql cdifd:policyHasAssignee,
+        cdifd:policyHasAssigner,
+        cdifd:policyHasTarget ;
+    sh:targetClass odrl:Privacy .
+
+cdifd:ODRLRequestShape a sh:NodeShape ;
+    sh:sparql cdifd:policyHasAssignee,
+        cdifd:policyHasTarget ;
+    sh:targetClass odrl:Request .
+
+cdifd:ODRLRuleShape a sh:NodeShape ;
+    sh:property [ sh:maxCount 1 ;
+            sh:message "An ODRL rule (permission, prohibition or duty) must have exactly one odrl:action." ;
+            sh:minCount 1 ;
+            sh:path odrl:action ],
+        [ sh:maxCount 1 ;
+            sh:message "An ODRL rule has at most one odrl:target; group several assets in an odrl:AssetCollection." ;
+            sh:path odrl:target ],
+        [ sh:maxCount 1 ;
+            sh:message "An ODRL rule has at most one odrl:output." ;
+            sh:path odrl:output ],
+        [ sh:maxCount 1 ;
+            sh:message "An ODRL rule has at most one odrl:assigner." ;
+            sh:path odrl:assigner ],
+        [ sh:maxCount 1 ;
+            sh:message "An ODRL rule has at most one odrl:assignee; group several parties in an odrl:PartyCollection." ;
+            sh:path odrl:assignee ] ;
+    sh:targetClass odrl:Duty,
+        odrl:Permission,
+        odrl:Prohibition ;
+    sh:targetObjectsOf odrl:consequence,
+        odrl:duty,
+        odrl:obligation,
+        odrl:permission,
+        odrl:prohibition,
+        odrl:remedy .
+
+cdifd:ODRLSetShape a sh:NodeShape ;
+    sh:sparql cdifd:policyHasTarget ;
+    sh:targetClass odrl:Set .
+
+cdifd:ODRLTicketShape a sh:NodeShape ;
+    sh:sparql cdifd:policyHasNoAssignee,
+        cdifd:policyHasTarget ;
+    sh:targetClass odrl:Ticket .
+
+cdifd:maintainerOrProviderContactPointShape a sh:NodeShape ;
+    sh:property [ sh:message "A maintainer or provider Person should have a contactPoint for users to reach" ;
+            sh:minCount 1 ;
+            sh:or ( [ sh:class schema:ContactPoint ] [ sh:nodeKind sh:IRI ] ) ;
+            sh:path schema:contactPoint ;
+            sh:severity sh:Warning ] ;
+    sh:target [ a sh:SPARQLTarget ;
+            sh:select """
+            PREFIX schema: <http://schema.org/>
+            SELECT ?this WHERE {
+                { ?record schema:maintainer ?this . }
+                UNION
+                { ?record schema:provider ?this . }
+                ?this a schema:Person .
+            }
+        """ ] .
+
+<https://cdif.org/validation/0.1/skos#ConceptShape> a sh:NodeShape ;
+    sh:message "A SKOS Concept must have at least a prefLabel." ;
+    sh:nodeKind sh:BlankNodeOrIRI ;
+    sh:property <https://cdif.org/validation/0.1/skos#conceptPrefLabelProperty> ;
+    sh:targetClass skos:Concept .
+
+<https://cdif.org/validation/0.1/skos#conceptBroaderNotSelfShape> a sh:NodeShape ;
+    sh:sparql [ sh:message "A Concept must not declare itself as skos:broader (reflexive hierarchy)." ;
+            sh:select """
+            PREFIX skos: <http://www.w3.org/2004/02/skos/core#>
+            SELECT $this
+            WHERE {
+                $this skos:broader $this .
+            }
+        """ ] ;
+    sh:targetClass skos:Concept .
+
+<https://cdif.org/validation/0.1/skos#prefLabelUniqueLangShape> a sh:NodeShape ;
+    sh:property [ sh:message "A Concept should have at most one skos:prefLabel per language tag (SKOS integrity condition S14)." ;
+            sh:path skos:prefLabel ;
+            sh:uniqueLang true ] ;
+    sh:targetClass skos:Concept .
+
+cdifd:CDIFAccessConditionShape a sh:NodeShape ;
+    sh:property [ sh:message "A duty on a CDIF Access permission is an access condition and must carry the constraint odrl:event odrl:lt odrl:policyUsage." ;
+            sh:path odrl:constraint ;
+            sh:qualifiedMinCount 1 ;
+            sh:qualifiedValueShape [ sh:property [ sh:hasValue odrl:event ;
+                            sh:path odrl:leftOperand ],
+                        [ sh:hasValue odrl:lt ;
+                            sh:path odrl:operator ],
+                        [ sh:hasValue odrl:policyUsage ;
+                            sh:path odrl:rightOperand ] ] ] .
+
+cdifd:CDIFAccessRuleTargetShape a sh:NodeShape ;
+    sh:property [ sh:message "Every permission and prohibition of a CDIF Access Offer must name its odrl:target (normally the distribution's @id)." ;
+            sh:minCount 1 ;
+            sh:path odrl:target ] .
+
+cdifd:affiliationProperty a sh:PropertyShape ;
+    sh:message "Optional: an affiliation must have object schema:Organization" ;
+    sh:minCount 0 ;
+    sh:or ( [ sh:class schema:Organization ] [ sh:nodeKind sh:IRI ] ) ;
+    sh:path schema:affiliation ;
+    sh:severity sh:Warning .
+
+cdifd:contactPointProperty a sh:PropertyShape ;
+    sh:message "A Person should have a contactPoint (schema:ContactPoint or mailto: IRI)" ;
+    sh:minCount 1 ;
+    sh:or ( [ sh:class schema:ContactPoint ] [ sh:nodeKind sh:IRI ] ) ;
+    sh:path schema:contactPoint ;
+    sh:severity sh:Info .
+
+cdifd:policyHasAssignerOrAssignee a sh:SPARQLConstraint ;
+    sh:message "An ODRL Assertion needs an assigner or an assignee, at policy level or on every permission and prohibition." ;
+    sh:select """
+        PREFIX odrl: <http://www.w3.org/ns/odrl/2/>
+        SELECT $this WHERE {
+            FILTER NOT EXISTS { $this odrl:assigner ?a }
+            FILTER EXISTS {
+                $this odrl:permission|odrl:prohibition ?r1 .
+                FILTER NOT EXISTS { ?r1 odrl:assigner ?x1 }
+            }
+            FILTER NOT EXISTS { $this odrl:assignee ?b }
+            FILTER EXISTS {
+                $this odrl:permission|odrl:prohibition ?r2 .
+                FILTER NOT EXISTS { ?r2 odrl:assignee ?x2 }
+            }
+        }
+    """ .
+
+cdifd:policyHasNoAssignee a sh:SPARQLConstraint ;
+    sh:message "An ODRL Ticket names no assignee; it is granted to whoever holds it ({?where} has odrl:assignee)." ;
+    sh:select """
+        PREFIX odrl: <http://www.w3.org/ns/odrl/2/>
+        SELECT $this ?where WHERE {
+            { BIND ($this AS ?where) $this odrl:assignee ?a }
+            UNION
+            { $this odrl:permission|odrl:prohibition ?where . ?where odrl:assignee ?ra }
+        }
+    """ .
+
+cdifd:termLabelProperty a sh:PropertyShape ;
+    sh:datatype xsd:string ;
+    sh:message "a label (schema:name) for the term must be provided, and must have at least 3 characters" ;
+    sh:minCount 1 ;
+    sh:minLength 3 ;
+    sh:path schema:name .
+
+<https://cdif.org/validation/0.1/skos#conceptPrefLabelProperty> a sh:PropertyShape ;
+    sh:message "Every skos:Concept must have at least one skos:prefLabel." ;
+    sh:minCount 1 ;
+    sh:path skos:prefLabel .
+
+cdifd:nameProperty a sh:PropertyShape ;
+    sh:datatype xsd:string ;
+    sh:message "a label (schema:name) for the Organization must be provided, and must have at least 3 characters" ;
+    sh:minCount 1 ;
+    sh:minLength 3 ;
+    sh:path schema:name .
+
+cdifd:policyHasAssignee a sh:SPARQLConstraint ;
+    sh:message "This kind of ODRL policy needs an assignee: give odrl:assignee at policy level, or on every permission and prohibition ({?rule} has none)." ;
+    sh:select """
+        PREFIX odrl: <http://www.w3.org/ns/odrl/2/>
+        SELECT $this ?rule WHERE {
+            FILTER NOT EXISTS { $this odrl:assignee ?a }
+            $this odrl:permission|odrl:prohibition ?rule .
+            FILTER NOT EXISTS { ?rule odrl:assignee ?ra }
+        }
+    """ .
+
+cdifd:policyHasAssigner a sh:SPARQLConstraint ;
+    sh:message "This kind of ODRL policy needs an assigner: give odrl:assigner at policy level, or on every permission and prohibition ({?rule} has none)." ;
+    sh:select """
+        PREFIX odrl: <http://www.w3.org/ns/odrl/2/>
+        SELECT $this ?rule WHERE {
+            FILTER NOT EXISTS { $this odrl:assigner ?a }
+            $this odrl:permission|odrl:prohibition ?rule .
+            FILTER NOT EXISTS { ?rule odrl:assigner ?ra }
+        }
+    """ .
+
+cdifd:policyHasTarget a sh:SPARQLConstraint ;
+    sh:message "This kind of ODRL policy needs a target: give odrl:target at policy level, or on every rule ({?rule} has none)." ;
+    sh:select """
+        PREFIX odrl: <http://www.w3.org/ns/odrl/2/>
+        SELECT $this ?rule WHERE {
+            FILTER NOT EXISTS { $this odrl:target ?t }
+            $this odrl:permission|odrl:prohibition|odrl:obligation ?rule .
+            FILTER NOT EXISTS { ?rule odrl:target ?rt }
+        }
+    """ .
+
