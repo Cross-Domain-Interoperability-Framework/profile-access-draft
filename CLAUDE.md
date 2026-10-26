@@ -9,15 +9,17 @@ the canonical source is `metadataBuildingBlocks` (mBB).
 > **Status (2026-10-26): draft.** Published as
 > `Cross-Domain-Interoperability-Framework/profile-access-draft`. The repo holds only docs and the
 > design spreadsheet (`CDIF_Access_Profile_ODRL_Classes_Properties_Description.xlsx`). The draft mBB
-> blocks `_sources/odrlProperties/odrlOffer/` and `_sources/profiles/cdifProfile/cdifAccess/` are on
-> mBB branch `cdif-access-draft`, not merged, with open questions marked `OPEN:`. mBB has no
-> `profile-access` entry in `tools/sync_release_repos.py`'s `REPOS` list yet. The generated file
-> names below are the expected ones, not existing files.
+> blocks (`_sources/odrlProperties/`: generic ODRL `odrlPolicy`, `odrlRule`, `odrlAction`,
+> `odrlConstraint`, `odrlParty`, `odrlAsset`, `odrlTerms`, plus the CDIF-specific `odrlOffer`; and
+> `_sources/profiles/cdifProfile/cdifAccess/`) are merged to mBB `main` (PR #54, squash commit
+> `ef63319806`), with open questions marked `OPEN:`. mBB has no `profile-access` entry in
+> `tools/sync_release_repos.py`'s `REPOS` list yet. The generated file names below are the expected
+> ones, not existing files.
 
 ## Bootstrapping order
 
 1. Finish the `cdifAccess` block in mBB (`_sources/profiles/cdifProfile/cdifAccess/`): it has a
-   schema and an example; SHACL rules and `conformance.json` are still missing.
+   schema and an example on mBB `main`; SHACL rules and `conformance.json` are still missing.
 2. Add `("profile-access", "_sources/profiles/cdifProfile/cdifAccess", "cdifAccessStructuredSchema.json", "accessRules.shacl")`
    to `REPOS` in mBB `tools/sync_release_repos.py`, then sync (below).
 3. Add the hand-authored files here: `cdifAccess-frame.jsonld`, `CDIFAccessImplementationGuide.md`,
