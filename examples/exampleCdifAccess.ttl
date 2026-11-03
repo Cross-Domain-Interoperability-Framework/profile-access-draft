@@ -1,0 +1,38 @@
+@prefix cdifa1: <https://w3id.org/cdif/access/profile1/> .
+@prefix dcterms: <http://purl.org/dc/terms/> .
+@prefix ex: <https://example.org/> .
+@prefix odrl: <http://www.w3.org/ns/odrl/2/> .
+@prefix schema: <http://schema.org/> .
+
+<https://example.org/dataset/3936> a schema:Dataset ;
+    schema:conditionsOfAccess <https://example.org/odrloffer/13adb49c-f641-4ac7-aa90-18651cc211ce>,
+        "Users located in the UK may download the data after assenting to the End User Licence." ;
+    schema:distribution <https://example.org/dataset/3936/distribution/csv> ;
+    schema:name "Example restricted-access survey dataset" ;
+    schema:subjectOf [ dcterms:conformsTo <https://w3id.org/cdif/access/1.1> ] .
+
+<https://example.org/odrloffer/13adb49c-f641-4ac7-aa90-18651cc211ce> a odrl:Offer ;
+    odrl:assigner ex:repository ;
+    odrl:obligation [ odrl:action cdifa1:datadestruction ;
+            odrl:target <https://example.org/dataset/3936/distribution/csv> ] ;
+    odrl:permission [ odrl:action cdifa1:download ;
+            odrl:constraint [ a odrl:Constraint ;
+                    odrl:leftOperand odrl:spatial ;
+                    odrl:operator odrl:eq ;
+                    odrl:rightOperand <http://publications.europa.eu/resource/authority/country/GBR> ] ;
+            odrl:duty [ odrl:action cdifa1:assent ;
+                    odrl:constraint [ a odrl:Constraint ;
+                            odrl:leftOperand odrl:event ;
+                            odrl:operator odrl:lt ;
+                            odrl:rightOperand odrl:policyUsage ] ] ;
+            odrl:target <https://example.org/dataset/3936/distribution/csv> ] ;
+    odrl:profile cdifa1:cdifa1.ttl ;
+    odrl:prohibition [ odrl:action cdifa1:shareTRECredentials ;
+            odrl:target <https://example.org/dataset/3936/distribution/csv> ] .
+
+<https://example.org/dataset/3936/distribution/csv> a schema:DataDownload ;
+    schema:contentUrl "https://example.org/data/3936/responses.csv" ;
+    schema:encodingFormat "text/csv" ;
+    schema:name "Survey responses (CSV)" ;
+    odrl:hasPolicy <https://example.org/odrloffer/13adb49c-f641-4ac7-aa90-18651cc211ce> .
+
