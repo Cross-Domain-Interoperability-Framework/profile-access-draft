@@ -9,7 +9,7 @@
         "Users located in the UK may download the data after assenting to the End User Licence." ;
     schema:distribution <https://example.org/dataset/3936/distribution/csv> ;
     schema:name "Example restricted-access survey dataset" ;
-    schema:subjectOf [ dcterms:conformsTo <https://w3id.org/cdif/access/1.1> ] .
+    schema:subjectOf [ dcterms:conformsTo <https://w3id.org/cdif/access/2.0> ] .
 
 <https://example.org/odrloffer/13adb49c-f641-4ac7-aa90-18651cc211ce> a odrl:Offer ;
     odrl:assigner ex:repository ;
