@@ -21,7 +21,7 @@
   "schema:subjectOf": {
     "dcterms:conformsTo": [
       {
-        "@id": "https://w3id.org/cdif/access/1.1"
+        "@id": "https://w3id.org/cdif/access/2.0"
       }
     ]
   },
