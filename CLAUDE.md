@@ -77,6 +77,6 @@ the SHACL violation counts are unchanged.
   schema.org namespace is `http://schema.org/` (not `https://`).
 - All schema.org properties carry the `schema:` prefix; `@type` is an array (`["schema:Dataset"]`).
 - `schema:subjectOf` holds a `dcat:CatalogRecord` whose `dcterms:conformsTo` lists the profile URI
-  (`https://w3id.org/cdif/<profile>/1.1`; the Access URI is not yet defined).
+  (`https://w3id.org/cdif/<profile>/2.0`; the Access URI `access/2.0` is not yet minted).
 - Validation is open-world: never strip unknown properties from an example.
 - Bare reference slots are sealed `{@id}` objects (`additionalProperties: false`, `required: ['@id']`).

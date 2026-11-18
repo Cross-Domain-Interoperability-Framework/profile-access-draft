@@ -2,7 +2,7 @@
 
 This repository holds the published artifacts for the **CDIF Access profile**: machine-actionable data access and usage conditions, expressed as [W3C ODRL](https://www.w3.org/TR/odrl-model/) policies attached to CDIF metadata records. The intent and scenarios are described in the CDIF book's [data access chapter](https://cross-domain-interoperability-framework.github.io/cdifbook/data-access/intro).
 
-> **Status: draft, under review.** Open questions are listed in the implementation guide and marked `OPEN:` in the source schemas, including the `cdifa1` action vocabulary, the ODRL profile IRI and the conformance URI (`https://w3id.org/cdif/access/1.1` is proposed, not minted).
+> **Status: draft, under review.** Open questions are listed in the implementation guide and marked `OPEN:` in the source schemas, including the `cdifa1` action vocabulary, the ODRL profile IRI and the conformance URI (`https://w3id.org/cdif/access/2.0` is proposed, not minted).
 
 ## Contents
 

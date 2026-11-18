@@ -1,6 +1,6 @@
 # CDIF Access Profile — Implementation Guide
 
-> **Draft for review (Dagstuhl, November 2026).** The schema, SHACL rules and example are draft. Open questions are collected in [Open questions](#open-questions) and marked `OPEN:` in the source schemas. The conformance URI `https://w3id.org/cdif/access/1.1`, the `cdifa1:` namespace and the ODRL profile IRI are proposed, not minted.
+> **Draft for review (Dagstuhl, November 2026).** The schema, SHACL rules and example are draft. Open questions are collected in [Open questions](#open-questions) and marked `OPEN:` in the source schemas. The conformance URI `https://w3id.org/cdif/access/2.0`, the `cdifa1:` namespace and the ODRL profile IRI are proposed, not minted.
 
 # Table of contents
 
@@ -99,7 +99,7 @@ A record conforms to the CDIF Access profile when it:
    ```json
    "schema:subjectOf": {
      "dcterms:conformsTo": [
-       {"@id": "https://w3id.org/cdif/access/1.1"}
+       {"@id": "https://w3id.org/cdif/access/2.0"}
      ]
    }
    ```
@@ -137,7 +137,7 @@ The two validators check the same constraints. Each was tested by mutating the e
 |---|---|---|---|
 | `CDIFAccessDatasetShape` | cdifAccess | Dataset has a policy (distribution `odrl:hasPolicy`, or an IRI in `schema:conditionsOfAccess`) | Violation |
 | `CDIFAccessHasPolicyShape` | cdifAccess | `odrl:hasPolicy` values are IRIs | Violation |
-| `CDIFAccessConformsToShape` | cdifAccess | Catalog record declares `access/1.1` | Warning |
+| `CDIFAccessConformsToShape` | cdifAccess | Catalog record declares `access/2.0` | Warning |
 | `CDIFAccessOfferShape` | odrlOffer | Offer has the CDIF profile, a policy-level assigner and at least one permission; every permission and prohibition has a target; every permission duty carries the access-condition marker | Violation |
 | `ODRLPolicyShape` and subclass shapes | odrlPolicy | Policy is an IRI with at least one rule; `odrl:conflict` value; at most one policy-level target, assigner and assignee; per-subclass requirements (Set, Offer, Agreement, Request, Ticket, Assertion, Privacy) | Violation |
 | `ODRLRuleShape` | odrlRule | Every rule has exactly one action, and at most one target, output, assigner and assignee | Violation |
@@ -207,7 +207,7 @@ The profile adds no new class to the dataset. It constrains the catalog record a
 
 - **Cardinality:** Required
 - **Content:** catalog record object
-- **Description:** The metadata record about the dataset. Its `dcterms:conformsTo` array must include `{"@id": "https://w3id.org/cdif/access/1.1"}`. **OPEN:** the URI is not minted. 1.1 follows the other CDIF modules; a new profile might start at 1.0.
+- **Description:** The metadata record about the dataset. Its `dcterms:conformsTo` array must include `{"@id": "https://w3id.org/cdif/access/2.0"}`. **OPEN:** the URI is not minted. 2.0 follows the other CDIF modules; a new profile might start at 1.0.
 
 ### schema:conditionsOfAccess
 
@@ -579,7 +579,7 @@ A sealed `{"@id": "…"}` object: a reference to a node described elsewhere. It 
 [`examples/exampleCdifAccess.json`](examples/exampleCdifAccess.json) describes a restricted-access survey dataset with one CSV distribution:
 
 - **`schema:conditionsOfAccess`** gives a prose summary and the `@id` of the Offer.
-- **`schema:subjectOf`** declares `https://w3id.org/cdif/access/1.1`.
+- **`schema:subjectOf`** declares `https://w3id.org/cdif/access/2.0`.
 - **The distribution** `ex:dataset/3936/distribution/csv` carries the Offer inline in `odrl:hasPolicy`. The repository `https://example.org/repository` is the assigner, and the Offer declares the CDIF Access profile. Its rules all target the distribution:
 
   | Rule | Action | Condition | Kind |
@@ -631,7 +631,7 @@ The core of the Offer:
 
 These are for the review. Each is also marked `OPEN:` in the source schema.
 
-1. **Identifiers.** Neither `https://w3id.org/cdif/access/1.1` (conformance) nor the `cdifa1:` namespace (`https://w3id.org/cdif/access/profile1/`) is minted. Should the profile start at 1.0?
+1. **Identifiers.** Neither `https://w3id.org/cdif/access/2.0` (conformance) nor the `cdifa1:` namespace (`https://w3id.org/cdif/access/profile1/`) is minted. Should the profile start at 1.0?
 2. **ODRL profile.** `odrl:profile` names `cdifa1.ttl`, a file, where ODRL expects a profile identifier; nothing is published there. Is the action vocabulary an ODRL profile or a standalone controlled vocabulary? Which actions does it contain (download, assent, datadestruction, shareTRECredentials, analytics actions for federated analysis, …)?
 3. **Scoping users.** Use a PartyCollection assignee with a refinement (the book's form), or a rule `odrl:constraint` (the spreadsheet's form)? Or say when each is used.
 4. **Obligation cardinality.** The spreadsheet gives 1..*; the draft has 0..*.
