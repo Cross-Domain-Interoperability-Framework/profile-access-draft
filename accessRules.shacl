@@ -9,8 +9,8 @@
 
 cdifd:CDIFAccessConformsToShape a sh:NodeShape ;
     sh:property [ a sh:PropertyShape ;
-            sh:hasValue <https://w3id.org/cdif/access/2.0> ;
-            sh:message "A subjectOf catalog record on a CDIF Access dataset should include dcterms:conformsTo <https://w3id.org/cdif/access/2.0>." ;
+            sh:hasValue <https://w3id.org/cdif/access/1.0> ;
+            sh:message "A subjectOf catalog record on a CDIF Access dataset should include dcterms:conformsTo <https://w3id.org/cdif/access/1.0>." ;
             sh:minCount 1 ;
             sh:path dcterms:conformsTo ;
             sh:severity sh:Warning ] ;
@@ -191,19 +191,19 @@ cdifd:CDIFIdentifierTypeTermShape a sh:NodeShape ;
         }""" ] .
 
 cdifd:CDIFOrganizationShape a sh:NodeShape ;
-    sh:message "Organization must have an @id IRI, a name or an identifier that is a string" ;
-    sh:or ( [ sh:nodeKind sh:IRI ] [ sh:property cdifd:nameProperty ] [ sh:property [ sh:message "an organization should have an identifier that is a URI; use of ORCID is strongly encouraged" ;
+    sh:message "Organization must have an @id IRI, a non-empty schema:name, or an identifier that is a string. A name that is present but empty does not satisfy this." ;
+    sh:or ( [ sh:nodeKind sh:IRI ] [ sh:property cdifd:organizationNameProperty ] [ sh:property [ sh:message "an organization should have an identifier that is a URI; use of ORCID is strongly encouraged" ;
                         sh:minCount 1 ;
                         sh:nodeKind sh:IRIOrLiteral ;
                         sh:path schema:identifier ] ] ) ;
     sh:targetClass schema:Organization .
 
 cdifd:CDIFPersonShape a sh:NodeShape ;
-    sh:message "A person must have a name or an identifier provided; affiliation to an organization is recommended." ;
+    sh:message "A person must have a non-empty schema:name or an identifier; a name that is present but empty does not satisfy this. Affiliation to an organization is recommended." ;
     sh:or ( [ sh:property [ sh:message "a person should have an identifier that is a URI; use of ORCID is strongly encouraged" ;
                         sh:minCount 1 ;
                         sh:nodeKind sh:IRIOrLiteral ;
-                        sh:path schema:identifier ] ] [ sh:property cdifd:nameProperty ] ) ;
+                        sh:path schema:identifier ] ] [ sh:property cdifd:personNameProperty ] ) ;
     sh:property cdifd:affiliationProperty,
         cdifd:contactPointProperty ;
     sh:targetClass schema:Person .
@@ -507,6 +507,20 @@ cdifd:contactPointProperty a sh:PropertyShape ;
     sh:path schema:contactPoint ;
     sh:severity sh:Info .
 
+cdifd:organizationNameProperty a sh:PropertyShape ;
+    sh:datatype xsd:string ;
+    sh:message "a label (schema:name) for the Organization must be provided, and must not be empty" ;
+    sh:minCount 1 ;
+    sh:minLength 1 ;
+    sh:path schema:name .
+
+cdifd:personNameProperty a sh:PropertyShape ;
+    sh:datatype xsd:string ;
+    sh:message "a name for the person must be provided, and must not be empty." ;
+    sh:minCount 1 ;
+    sh:minLength 1 ;
+    sh:path schema:name .
+
 cdifd:policyHasAssignerOrAssignee a sh:SPARQLConstraint ;
     sh:message "An ODRL Assertion needs an assigner or an assignee, at policy level or on every permission and prohibition." ;
     sh:select """
@@ -538,22 +552,15 @@ cdifd:policyHasNoAssignee a sh:SPARQLConstraint ;
 
 cdifd:termLabelProperty a sh:PropertyShape ;
     sh:datatype xsd:string ;
-    sh:message "a label (schema:name) for the term must be provided, and must have at least 3 characters" ;
+    sh:message "a label (schema:name) for the term must be provided, and must not be empty" ;
     sh:minCount 1 ;
-    sh:minLength 3 ;
+    sh:minLength 1 ;
     sh:path schema:name .
 
 <https://cdif.org/validation/0.1/skos#conceptPrefLabelProperty> a sh:PropertyShape ;
     sh:message "Every skos:Concept must have at least one skos:prefLabel." ;
     sh:minCount 1 ;
     sh:path skos:prefLabel .
-
-cdifd:nameProperty a sh:PropertyShape ;
-    sh:datatype xsd:string ;
-    sh:message "a label (schema:name) for the Organization must be provided, and must have at least 3 characters" ;
-    sh:minCount 1 ;
-    sh:minLength 3 ;
-    sh:path schema:name .
 
 cdifd:policyHasAssignee a sh:SPARQLConstraint ;
     sh:message "This kind of ODRL policy needs an assignee: give odrl:assignee at policy level, or on every permission and prohibition ({?rule} has none)." ;
